@@ -90,7 +90,6 @@ echo "==> Done! Static binary: ${OUTPUT} ($(ls -lh "${OUTPUT}" | awk '{print $5}
 echo ""
 echo "Test with:"
 echo "  ${OUTPUT} list"
-echo "  ${OUTPUT} epp:hello"
 
 # Restore dev deps
 cd "${BUILD_DIR}"
