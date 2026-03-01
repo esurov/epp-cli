@@ -1,6 +1,5 @@
 {
     "output": "build/epp-cli.phar",
-    "main": "bin/epp",
     "directories": ["app"],
     "finder": [
         {
@@ -12,8 +11,6 @@
         }
     ],
     "force-autodiscovery": true,
-    "exclude-dev-files": false,
     "dump-autoload": false,
-    "compression": "GZ",
-    "chmod": "0755"
+    "compression": "GZ"
 }

@@ -1,0 +1,124 @@
+name: Build Static Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      php_version:
+        description: 'PHP version'
+        default: '8.4'
+        type: string
+
+env:
+  PHP_VERSION: ${{ inputs.php_version || '8.4' }}
+  EXTENSIONS: openssl,dom,mbstring,libxml,phar,zlib,ctype,filter,tokenizer,iconv,xml,xmlreader,xmlwriter,simplexml,sockets
+
+jobs:
+  build-phar:
+    name: Build PHAR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+
+      - run: composer install --no-dev --optimize-autoloader
+      - run: vendor/bin/box compile
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phar
+          path: build/epp-cli.phar
+
+  build-static:
+    name: Static ${{ matrix.os }}-${{ matrix.arch }}
+    needs: build-phar
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: x86_64
+            runner: ubuntu-latest
+            spc_url: https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-linux-x86_64
+          - os: linux
+            arch: aarch64
+            runner: ubuntu-24.04-arm
+            spc_url: https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-linux-aarch64
+          - os: macos
+            arch: x86_64
+            runner: macos-13
+            spc_url: https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-x86_64
+          - os: macos
+            arch: aarch64
+            runner: macos-14
+            spc_url: https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-macos-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: phar
+          path: build
+
+      - name: Download spc
+        run: |
+          curl -fSL "${{ matrix.spc_url }}" -o spc
+          chmod +x spc
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential automake autoconf libtool pkg-config cmake
+
+      - name: Check environment
+        run: ./spc doctor --auto-fix || true
+
+      - name: Download PHP sources
+        run: ./spc download --with-php="${PHP_VERSION}" --for-extensions="${EXTENSIONS}"
+
+      - name: Build micro.sfx
+        run: ./spc build "${EXTENSIONS}" --build-micro
+
+      - name: Combine into static binary
+        run: |
+          cat buildroot/bin/micro.sfx build/epp-cli.phar > build/epp-cli-${{ matrix.os }}-${{ matrix.arch }}
+          chmod +x build/epp-cli-${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Smoke test
+        run: ./build/epp-cli-${{ matrix.os }}-${{ matrix.arch }} list
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: epp-cli-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/epp-cli-${{ matrix.os }}-${{ matrix.arch }}
+
+  release:
+    name: Upload Release Assets
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-phar, build-static]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/phar/epp-cli.phar
+            artifacts/epp-cli-linux-x86_64/epp-cli-linux-x86_64
+            artifacts/epp-cli-linux-aarch64/epp-cli-linux-aarch64
+            artifacts/epp-cli-macos-x86_64/epp-cli-macos-x86_64
+            artifacts/epp-cli-macos-aarch64/epp-cli-macos-aarch64
+          generate_release_notes: true

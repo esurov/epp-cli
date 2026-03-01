@@ -2,14 +2,39 @@
 
 A lightweight command-line interface for managing .at domains via the Extensible Provisioning Protocol (EPP). Built on Symfony Console and the [metaregistrar/php-epp-client](https://github.com/metaregistrar/php-epp-client) library, it provides 16 commands for domain and contact operations against the nic.at registry.
 
-Distributable as a single PHAR file.
+Distributable as a single PHAR file or a **static self-contained binary** (no PHP installation required) for macOS and Linux.
 
 ## Requirements
 
-- PHP 8.2+
-- Extensions: `openssl`, `dom`, `mbstring`
+For running from source: PHP 8.2+ with extensions `openssl`, `dom`, `mbstring`.
+
+The static binary has **zero dependencies** — it embeds PHP and all extensions.
 
 ## Installation
+
+### Static binary (recommended)
+
+Download the binary for your platform from the [releases page](../../releases):
+
+| Platform | File |
+|---|---|
+| Linux x86_64 | `epp-cli-linux-x86_64` |
+| Linux ARM64 | `epp-cli-linux-aarch64` |
+| macOS Intel | `epp-cli-macos-x86_64` |
+| macOS Apple Silicon | `epp-cli-macos-aarch64` |
+
+```bash
+chmod +x epp-cli-linux-x86_64
+./epp-cli-linux-x86_64 epp:hello
+```
+
+### As PHAR
+
+Download `epp-cli.phar` from the releases page (requires PHP 8.2+ on the system):
+
+```bash
+php epp-cli.phar epp:hello
+```
 
 ### From source
 
@@ -20,24 +45,34 @@ composer install
 cp .env.example .env
 ```
 
-### As PHAR
+All variants load `.env` from the current working directory.
 
-Download `epp-cli.phar` from the releases page and place it anywhere on your system:
+## Building
 
-```bash
-chmod +x epp-cli.phar
-./epp-cli.phar epp:hello
-```
-
-The PHAR loads `.env` from the current working directory.
-
-## Building the PHAR
+### PHAR only
 
 ```bash
 composer install --no-dev
 vendor/bin/box compile
 # produces build/epp-cli.phar
 ```
+
+### Static binary (current platform)
+
+Uses [static-php-cli](https://github.com/crazywhalecc/static-php-cli) to compile a PHP micro runtime, then combines it with the PHAR into a single executable.
+
+```bash
+./build-static.sh
+# produces build/epp-cli-{os}-{arch}
+```
+
+Override PHP version: `SPC_PHP_VERSION=8.3 ./build-static.sh`
+
+The first build downloads and compiles PHP from source — expect 10-30 minutes depending on your machine. Subsequent builds reuse cached sources.
+
+### CI/CD
+
+Push a `v*` tag to trigger the GitHub Actions workflow, which builds static binaries for all four platforms (linux-x86_64, linux-aarch64, macos-x86_64, macos-aarch64) and attaches them to a GitHub release. You can also trigger the workflow manually from the Actions tab.
 
 ## Configuration
 
