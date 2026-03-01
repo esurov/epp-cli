@@ -45,7 +45,6 @@ EPP_USERNAME=your-username
 EPP_PASSWORD=your-password
 EPP_SSL=true
 EPP_VERIFY_PEER=true
-EPP_ALLOW_SELF_SIGNED=false
 EPP_TIMEOUT=10
 EPP_LOG_DIR=
 ```
@@ -58,7 +57,6 @@ EPP_LOG_DIR=
 | `EPP_PASSWORD` | | Registry password |
 | `EPP_SSL` | `true` | Use SSL/TLS connection |
 | `EPP_VERIFY_PEER` | `true` | Verify SSL certificate |
-| `EPP_ALLOW_SELF_SIGNED` | `false` | Accept self-signed certificates |
 | `EPP_TIMEOUT` | `10` | Connection timeout in seconds |
 | `EPP_LOG_DIR` | | Directory for EPP XML logs (disabled when empty) |
 

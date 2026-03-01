@@ -14,8 +14,6 @@ return [
 
     'verify_peer' => (bool) env('EPP_VERIFY_PEER', true),
 
-    'allow_self_signed' => (bool) env('EPP_ALLOW_SELF_SIGNED', false),
-
     'timeout' => (int) env('EPP_TIMEOUT', 10),
 
     'log_dir' => env('EPP_LOG_DIR', ''),

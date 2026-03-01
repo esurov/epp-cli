@@ -16,7 +16,6 @@ class EppConnectionService
         private string $password,
         private bool $ssl = true,
         private bool $verifyPeer = true,
-        private bool $allowSelfSigned = false,
         private int $timeout = 10,
         private string $logDir = '',
     ) {}
@@ -30,7 +29,7 @@ class EppConnectionService
             password: config('epp.password'),
             ssl: config('epp.ssl'),
             verifyPeer: config('epp.verify_peer'),
-            allowSelfSigned: config('epp.allow_self_signed'),
+
             timeout: config('epp.timeout'),
             logDir: config('epp.log_dir') ?? '',
         );
