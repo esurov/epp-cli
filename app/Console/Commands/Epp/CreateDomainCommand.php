@@ -33,8 +33,18 @@ class CreateDomainCommand extends EppCommand
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
         $nameservers = $this->option('nameserver');
         if (empty($nameservers)) {
-            $ns = text('Enter nameserver (format: ns.example.com or ns.example.com/1.2.3.4):', required: true);
-            $nameservers = [$ns];
+            $nameservers = [];
+            while (count($nameservers) < 2) {
+                $ns = text(
+                    label: 'Enter nameserver (format: ns.example.com or ns.example.com/1.2.3.4):',
+                    required: true,
+                    hint: count($nameservers) === 0 ? 'At least 2 nameservers required' : 'Enter one more nameserver (minimum 2)',
+                );
+                $nameservers[] = $ns;
+            }
+            while ($ns = text('Add another nameserver (leave empty to finish):')) {
+                $nameservers[] = $ns;
+            }
         }
         $registrant = $this->option('registrant') ?? text('Enter registrant contact handle:', required: true);
         $techContacts = $this->option('techc');
