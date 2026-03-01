@@ -2,28 +2,29 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppDeleteRequest;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppDomainDeleteExtension;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
-class DeleteDomainCommand extends Command
+class DeleteDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('domain:delete')
+            ->setDescription('Delete a domain')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to delete')
+            ->addOption('scheduledate', null, InputOption::VALUE_REQUIRED, 'When to delete (now|expiration)')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:delete-domain
-        {--domain= : Domain name to delete}
-        {--scheduledate= : When to delete (now|expiration)}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Delete a domain';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name to delete:', required: true);
 

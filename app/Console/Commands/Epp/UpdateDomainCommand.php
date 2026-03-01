@@ -2,8 +2,7 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppUndeleteRequest;
@@ -11,33 +10,35 @@ use Metaregistrar\EPP\atEppUpdateDomainRequest;
 use Metaregistrar\EPP\eppHost;
 use Metaregistrar\EPP\eppInfoDomainRequest;
 use Metaregistrar\EPP\eppStatus;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class UpdateDomainCommand extends Command
+class UpdateDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('domain:update')
+            ->setDescription('Update a domain')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to update')
+            ->addOption('addns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add nameserver (format: ns/ip/ip)')
+            ->addOption('delns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Remove nameserver')
+            ->addOption('addstatus', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add status (format: statusname or statusname/message)')
+            ->addOption('delstatus', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Remove status')
+            ->addOption('registrant', null, InputOption::VALUE_REQUIRED, 'Change registrant')
+            ->addOption('addtechc', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add tech contact')
+            ->addOption('deltechc', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Remove tech contact')
+            ->addOption('addsecdns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add DNSSEC data')
+            ->addOption('delsecdns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Remove DNSSEC data')
+            ->addOption('delsecdns-all', null, InputOption::VALUE_NONE, 'Remove all DNSSEC data')
+            ->addOption('restore', null, InputOption::VALUE_NONE, 'Restore a deleted domain')
+            ->addOption('authinfo', null, InputOption::VALUE_REQUIRED, 'Set new authorization info')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:update-domain
-        {--domain= : Domain name to update}
-        {--addns=* : Add nameserver (format: ns/ip/ip)}
-        {--delns=* : Remove nameserver}
-        {--addstatus=* : Add status (format: statusname or statusname/message)}
-        {--delstatus=* : Remove status}
-        {--registrant= : Change registrant}
-        {--addtechc=* : Add tech contact}
-        {--deltechc=* : Remove tech contact}
-        {--addsecdns=* : Add DNSSEC data}
-        {--delsecdns=* : Remove DNSSEC data}
-        {--delsecdns-all : Remove all DNSSEC data}
-        {--restore : Restore a deleted domain}
-        {--authinfo= : Set new authorization info}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Update a domain';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
 

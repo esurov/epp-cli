@@ -2,41 +2,42 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppCreateContactExtension;
 use Metaregistrar\EPP\atEppCreateContactRequest;
 use Metaregistrar\EPP\eppContactPostalInfo;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
-class CreateContactCommand extends Command
+class CreateContactCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('contact:create')
+            ->setDescription('Create a new contact')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Contact name')
+            ->addOption('street', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Street address (can be specified multiple times)')
+            ->addOption('city', null, InputOption::VALUE_REQUIRED, 'City')
+            ->addOption('postalcode', null, InputOption::VALUE_REQUIRED, 'Postal code')
+            ->addOption('country', null, InputOption::VALUE_REQUIRED, 'Country code (ISO 3166-1 alpha-2)')
+            ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email address')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Contact type (privateperson|organisation|role)')
+            ->addOption('org', null, InputOption::VALUE_REQUIRED, 'Organisation name')
+            ->addOption('voice', null, InputOption::VALUE_REQUIRED, 'Phone number')
+            ->addOption('fax', null, InputOption::VALUE_REQUIRED, 'Fax number')
+            ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
+            ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
+            ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:create-contact
-        {--name= : Contact name}
-        {--street=* : Street address (can be specified multiple times)}
-        {--city= : City}
-        {--postalcode= : Postal code}
-        {--country= : Country code (ISO 3166-1 alpha-2)}
-        {--email= : Email address}
-        {--type= : Contact type (privateperson|organisation|role)}
-        {--org= : Organisation name}
-        {--voice= : Phone number}
-        {--fax= : Fax number}
-        {--disclose-phone= : Disclose phone in WHOIS (0|1)}
-        {--disclose-fax= : Disclose fax in WHOIS (0|1)}
-        {--disclose-email= : Disclose email in WHOIS (0|1)}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Create a new contact';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $name = $this->option('name') ?? text('Enter contact name:', required: true);
         $street = $this->option('street');

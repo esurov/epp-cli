@@ -1,42 +1,82 @@
 # EPP CLI
 
-A command-line interface for managing .at domains via the Extensible Provisioning Protocol (EPP). Built on Laravel and the [metaregistrar/php-epp-client](https://github.com/metaregistrar/php-epp-client) library, it provides 16 Artisan commands for domain and contact operations against the nic.at registry.
+A lightweight command-line interface for managing .at domains via the Extensible Provisioning Protocol (EPP). Built on Symfony Console and the [metaregistrar/php-epp-client](https://github.com/metaregistrar/php-epp-client) library, it provides 16 commands for domain and contact operations against the nic.at registry.
+
+Distributable as a single PHAR file or a **static self-contained binary** (no PHP installation required) for macOS and Linux.
 
 ## Requirements
 
-- PHP 8.2+
-- Composer
-- An EPP account with nic.at (or compatible registry)
+For running from source: PHP 8.2+ with extensions `openssl`, `dom`, `mbstring`.
 
-### PHP Extensions
-
-| Extension | Required by | Purpose |
-|---|---|---|
-| `openssl` | Laravel, EPP client | SSL/TLS connections to the EPP server |
-| `dom` | EPP client | Parsing and building EPP XML messages |
-| `libxml` | EPP client | XML processing (underlying `dom`) |
-| `mbstring` | Laravel, EPP client | Multibyte string handling |
-| `ctype` | Laravel | Character type checking |
-| `filter` | Laravel | Input validation and sanitization |
-| `hash` | Laravel | Hashing functions |
-| `session` | Laravel | Session support |
-| `tokenizer` | Laravel | PHP code tokenization |
-
-Most of these are enabled by default in standard PHP installations. Verify with `php -m`.
+The static binary has **zero dependencies** — it embeds PHP and all extensions.
 
 ## Installation
+
+### Static binary (recommended)
+
+Download the binary for your platform from the [releases page](../../releases):
+
+| Platform | File |
+|---|---|
+| Linux x86_64 | `epp-cli-linux-x86_64` |
+| Linux ARM64 | `epp-cli-linux-aarch64` |
+| macOS Intel | `epp-cli-macos-x86_64` |
+| macOS Apple Silicon | `epp-cli-macos-aarch64` |
+
+```bash
+chmod +x epp-cli-linux-x86_64
+./epp-cli-linux-x86_64 server:hello
+```
+
+### As PHAR
+
+Download `epp-cli.phar` from the releases page (requires PHP 8.2+ on the system):
+
+```bash
+php epp-cli.phar server:hello
+```
+
+### From source
 
 ```bash
 git clone <repository-url>
 cd epp-cli
 composer install
 cp .env.example .env
-php artisan key:generate
 ```
+
+All variants load `.env` from the current working directory.
+
+## Building
+
+### PHAR only
+
+```bash
+composer install --no-dev
+vendor/bin/box compile
+# produces build/epp-cli.phar
+```
+
+### Static binary (current platform)
+
+Uses [static-php-cli](https://github.com/crazywhalecc/static-php-cli) to compile a PHP micro runtime, then combines it with the PHAR into a single executable.
+
+```bash
+./build-static.sh
+# produces build/epp-cli-{os}-{arch}
+```
+
+Override PHP version: `SPC_PHP_VERSION=8.3 ./build-static.sh`
+
+The first build downloads and compiles PHP from source — expect 10-30 minutes depending on your machine. Subsequent builds reuse cached sources.
+
+### CI/CD
+
+Push a `v*` tag to trigger the GitHub Actions workflow, which builds static binaries for all four platforms (linux-x86_64, linux-aarch64, macos-x86_64, macos-aarch64) and attaches them to a GitHub release. You can also trigger the workflow manually from the Actions tab.
 
 ## Configuration
 
-Add your EPP credentials and connection settings to `.env`:
+Add your EPP credentials to `.env` in the working directory:
 
 ```env
 EPP_HOST=epp.nic.at
@@ -60,7 +100,13 @@ EPP_LOG_DIR=
 | `EPP_TIMEOUT` | `10` | Connection timeout in seconds |
 | `EPP_LOG_DIR` | | Directory for EPP XML logs (disabled when empty) |
 
-## Commands
+## Usage
+
+Run without arguments for an interactive command picker:
+
+```bash
+php bin/epp
+```
 
 All commands support `--cltrid` (client transaction ID, 4-64 chars) and `--logdir` (per-call log directory override). When required options are omitted, commands prompt interactively.
 
@@ -68,29 +114,29 @@ All commands support `--cltrid` (client transaction ID, 4-64 chars) and `--logdi
 
 ```bash
 # Test connection and server capabilities
-php artisan epp:hello
-php artisan epp:hello --lang=en --ver=1.0
+php bin/epp server:hello
+php bin/epp server:hello --lang=en --ver=1.0
 
 # Change EPP password
-php artisan epp:change-password --newpassword=mynewpass123
+php bin/epp password:change --newpassword=mynewpass123
 
 # Poll server messages
-php artisan epp:poll-message
-php artisan epp:poll-message --delete-after-poll
+php bin/epp message:poll
+php bin/epp message:poll --delete-after-poll
 ```
 
 ### Domains
 
 ```bash
 # Check availability
-php artisan epp:check-domain --domain=example.at
-php artisan epp:check-domain --domain=one.at --domain=two.at
+php bin/epp domain:check --domain=example.at
+php bin/epp domain:check --domain=one.at --domain=two.at
 
 # Get domain info
-php artisan epp:info-domain --domain=example.at
+php bin/epp domain:info --domain=example.at
 
 # Create domain
-php artisan epp:create-domain \
+php bin/epp domain:create \
   --domain=example.at \
   --nameserver=ns1.example.com \
   --nameserver=ns2.example.com/1.2.3.4 \
@@ -99,25 +145,25 @@ php artisan epp:create-domain \
   --authinfo='s3cretAuth!'
 
 # Update domain (add/remove nameservers, contacts, statuses, DNSSEC)
-php artisan epp:update-domain --domain=example.at --addns=ns3.example.com
-php artisan epp:update-domain --domain=example.at --restore
-php artisan epp:update-domain --domain=example.at --delsecdns-all
+php bin/epp domain:update --domain=example.at --addns=ns3.example.com
+php bin/epp domain:update --domain=example.at --restore
+php bin/epp domain:update --domain=example.at --delsecdns-all
 
 # Delete domain
-php artisan epp:delete-domain --domain=example.at --scheduledate=now
+php bin/epp domain:delete --domain=example.at --scheduledate=now
 
 # Withdraw domain
-php artisan epp:withdraw-domain --domain=example.at --deletezone
+php bin/epp domain:withdraw --domain=example.at --deletezone
 ```
 
 ### Contacts
 
 ```bash
 # Get contact info
-php artisan epp:info-contact --id=CONTACT001
+php bin/epp contact:info --id=CONTACT001
 
 # Create contact
-php artisan epp:create-contact \
+php bin/epp contact:create \
   --name="Jane Doe" \
   --street="Main Street 1" \
   --city=Vienna \
@@ -127,23 +173,23 @@ php artisan epp:create-contact \
   --type=privateperson
 
 # Update contact
-php artisan epp:update-contact --id=CONTACT001 --email=new@example.at
+php bin/epp contact:update --id=CONTACT001 --email=new@example.at
 
 # Delete contact
-php artisan epp:delete-contact --id=CONTACT001
+php bin/epp contact:delete --id=CONTACT001
 ```
 
 ### Transfers
 
 ```bash
 # Query transfer status
-php artisan epp:transfer-query-domain --domain=example.at
+php bin/epp domain:transfer-query --domain=example.at
 
 # Request transfer
-php artisan epp:transfer-request-domain --domain=example.at --authinfo=secret
+php bin/epp domain:transfer-request --domain=example.at --authinfo=secret
 
 # Cancel transfer
-php artisan epp:transfer-cancel-domain --domain=example.at
+php bin/epp domain:transfer-cancel --domain=example.at
 ```
 
 ## Output Format

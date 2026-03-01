@@ -2,26 +2,27 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\eppDomain;
 use Metaregistrar\EPP\eppInfoDomainRequest;
 use Metaregistrar\EPP\eppStatus;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class InfoDomainCommand extends Command
+class InfoDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('domain:info')
+            ->setDescription('Get information about a domain')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to query')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:info-domain
-        {--domain= : Domain name to query}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Get information about a domain';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
 

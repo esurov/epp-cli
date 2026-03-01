@@ -2,23 +2,24 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\password;
 
-class ChangePasswordCommand extends Command
+class ChangePasswordCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('password:change')
+            ->setDescription('Change the EPP login password')
+            ->addOption('newpassword', null, InputOption::VALUE_REQUIRED, 'New EPP password (8-16 chars)')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:change-password
-        {--newpassword= : New EPP password (8-16 chars)}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Change the EPP login password';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $newPassword = $this->option('newpassword') ?? password('Enter the new password (8-16 chars):', required: true);
 

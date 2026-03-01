@@ -2,32 +2,33 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppWithdrawRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 
-class WithdrawDomainCommand extends Command
+class WithdrawDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('domain:withdraw')
+            ->setDescription('Withdraw a domain')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to withdraw')
+            ->addOption('deletezone', null, InputOption::VALUE_NONE, 'Also delete the zone')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:withdraw-domain
-        {--domain= : Domain name to withdraw}
-        {--deletezone : Also delete the zone}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Withdraw a domain';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
 
         $deleteZone = $this->option('deletezone');
-        if (! $deleteZone && ! $this->option('no-interaction')) {
+        if (! $deleteZone && ! $this->input->getOption('no-interaction')) {
             $deleteZone = confirm('Also delete the zone?', false);
         }
 
