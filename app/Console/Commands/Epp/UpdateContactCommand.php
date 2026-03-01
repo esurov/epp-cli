@@ -18,7 +18,7 @@ class UpdateContactCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:update-contact')
+            ->setName('contact:update')
             ->setDescription('Update an existing contact')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to update')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Contact name')

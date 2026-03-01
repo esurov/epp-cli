@@ -14,7 +14,7 @@ class InfoContactCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:info-contact')
+            ->setName('contact:info')
             ->setDescription('Get information about a contact')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to query')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

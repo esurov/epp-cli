@@ -13,7 +13,7 @@ class CheckDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:check-domain')
+            ->setName('domain:check')
             ->setDescription('Check domain name availability')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Domain name(s) to check')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

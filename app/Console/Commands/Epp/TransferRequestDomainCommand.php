@@ -15,7 +15,7 @@ class TransferRequestDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:transfer-request-domain')
+            ->setName('domain:transfer-request')
             ->setDescription('Request a domain transfer')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to transfer')
             ->addOption('authinfo', null, InputOption::VALUE_REQUIRED, 'Authorization code for the transfer')

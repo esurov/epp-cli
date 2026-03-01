@@ -14,7 +14,7 @@ class DeleteContactCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:delete-contact')
+            ->setName('contact:delete')
             ->setDescription('Delete a contact')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to delete')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

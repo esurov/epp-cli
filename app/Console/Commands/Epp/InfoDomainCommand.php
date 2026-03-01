@@ -15,7 +15,7 @@ class InfoDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:info-domain')
+            ->setName('domain:info')
             ->setDescription('Get information about a domain')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to query')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

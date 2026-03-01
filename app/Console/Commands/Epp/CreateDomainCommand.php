@@ -16,7 +16,7 @@ class CreateDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:create-domain')
+            ->setName('domain:create')
             ->setDescription('Create a new domain')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to create')
             ->addOption('nameserver', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Nameserver (format: ns/ip/ip)')

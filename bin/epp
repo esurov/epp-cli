@@ -80,9 +80,10 @@ $default = new class extends Command {
         $app = $this->getApplication();
         $choices = [];
 
+        $builtIn = ['_select', 'help', 'list', 'completion'];
         foreach ($app->all() as $command) {
             $name = $command->getName();
-            if (str_starts_with($name, 'epp:')) {
+            if (! in_array($name, $builtIn) && ! $command->isHidden()) {
                 $choices[$name] = $name . ' - ' . $command->getDescription();
             }
         }

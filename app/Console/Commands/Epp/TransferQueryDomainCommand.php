@@ -14,7 +14,7 @@ class TransferQueryDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:transfer-query-domain')
+            ->setName('domain:transfer-query')
             ->setDescription('Query domain transfer status')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to query transfer status')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

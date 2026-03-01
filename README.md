@@ -25,7 +25,7 @@ Download the binary for your platform from the [releases page](../../releases):
 
 ```bash
 chmod +x epp-cli-linux-x86_64
-./epp-cli-linux-x86_64 epp:hello
+./epp-cli-linux-x86_64 server:hello
 ```
 
 ### As PHAR
@@ -33,7 +33,7 @@ chmod +x epp-cli-linux-x86_64
 Download `epp-cli.phar` from the releases page (requires PHP 8.2+ on the system):
 
 ```bash
-php epp-cli.phar epp:hello
+php epp-cli.phar server:hello
 ```
 
 ### From source
@@ -114,29 +114,29 @@ All commands support `--cltrid` (client transaction ID, 4-64 chars) and `--logdi
 
 ```bash
 # Test connection and server capabilities
-php bin/epp epp:hello
-php bin/epp epp:hello --lang=en --ver=1.0
+php bin/epp server:hello
+php bin/epp server:hello --lang=en --ver=1.0
 
 # Change EPP password
-php bin/epp epp:change-password --newpassword=mynewpass123
+php bin/epp password:change --newpassword=mynewpass123
 
 # Poll server messages
-php bin/epp epp:poll-message
-php bin/epp epp:poll-message --delete-after-poll
+php bin/epp message:poll
+php bin/epp message:poll --delete-after-poll
 ```
 
 ### Domains
 
 ```bash
 # Check availability
-php bin/epp epp:check-domain --domain=example.at
-php bin/epp epp:check-domain --domain=one.at --domain=two.at
+php bin/epp domain:check --domain=example.at
+php bin/epp domain:check --domain=one.at --domain=two.at
 
 # Get domain info
-php bin/epp epp:info-domain --domain=example.at
+php bin/epp domain:info --domain=example.at
 
 # Create domain
-php bin/epp epp:create-domain \
+php bin/epp domain:create \
   --domain=example.at \
   --nameserver=ns1.example.com \
   --nameserver=ns2.example.com/1.2.3.4 \
@@ -145,25 +145,25 @@ php bin/epp epp:create-domain \
   --authinfo='s3cretAuth!'
 
 # Update domain (add/remove nameservers, contacts, statuses, DNSSEC)
-php bin/epp epp:update-domain --domain=example.at --addns=ns3.example.com
-php bin/epp epp:update-domain --domain=example.at --restore
-php bin/epp epp:update-domain --domain=example.at --delsecdns-all
+php bin/epp domain:update --domain=example.at --addns=ns3.example.com
+php bin/epp domain:update --domain=example.at --restore
+php bin/epp domain:update --domain=example.at --delsecdns-all
 
 # Delete domain
-php bin/epp epp:delete-domain --domain=example.at --scheduledate=now
+php bin/epp domain:delete --domain=example.at --scheduledate=now
 
 # Withdraw domain
-php bin/epp epp:withdraw-domain --domain=example.at --deletezone
+php bin/epp domain:withdraw --domain=example.at --deletezone
 ```
 
 ### Contacts
 
 ```bash
 # Get contact info
-php bin/epp epp:info-contact --id=CONTACT001
+php bin/epp contact:info --id=CONTACT001
 
 # Create contact
-php bin/epp epp:create-contact \
+php bin/epp contact:create \
   --name="Jane Doe" \
   --street="Main Street 1" \
   --city=Vienna \
@@ -173,23 +173,23 @@ php bin/epp epp:create-contact \
   --type=privateperson
 
 # Update contact
-php bin/epp epp:update-contact --id=CONTACT001 --email=new@example.at
+php bin/epp contact:update --id=CONTACT001 --email=new@example.at
 
 # Delete contact
-php bin/epp epp:delete-contact --id=CONTACT001
+php bin/epp contact:delete --id=CONTACT001
 ```
 
 ### Transfers
 
 ```bash
 # Query transfer status
-php bin/epp epp:transfer-query-domain --domain=example.at
+php bin/epp domain:transfer-query --domain=example.at
 
 # Request transfer
-php bin/epp epp:transfer-request-domain --domain=example.at --authinfo=secret
+php bin/epp domain:transfer-request --domain=example.at --authinfo=secret
 
 # Cancel transfer
-php bin/epp epp:transfer-cancel-domain --domain=example.at
+php bin/epp domain:transfer-cancel --domain=example.at
 ```
 
 ## Output Format

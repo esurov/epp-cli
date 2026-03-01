@@ -15,7 +15,7 @@ class WithdrawDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:withdraw-domain')
+            ->setName('domain:withdraw')
             ->setDescription('Withdraw a domain')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to withdraw')
             ->addOption('deletezone', null, InputOption::VALUE_NONE, 'Also delete the zone')

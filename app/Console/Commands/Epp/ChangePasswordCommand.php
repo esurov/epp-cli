@@ -12,7 +12,7 @@ class ChangePasswordCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:change-password')
+            ->setName('password:change')
             ->setDescription('Change the EPP login password')
             ->addOption('newpassword', null, InputOption::VALUE_REQUIRED, 'New EPP password (8-16 chars)')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

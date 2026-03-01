@@ -18,7 +18,7 @@ class CreateContactCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:create-contact')
+            ->setName('contact:create')
             ->setDescription('Create a new contact')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Contact name')
             ->addOption('street', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Street address (can be specified multiple times)')

@@ -13,7 +13,7 @@ class PollMessageCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:poll-message')
+            ->setName('message:poll')
             ->setDescription('Poll for server messages')
             ->addOption('delete-after-poll', null, InputOption::VALUE_NONE, 'Delete the message after polling')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')

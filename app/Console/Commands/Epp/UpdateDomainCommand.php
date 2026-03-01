@@ -19,7 +19,7 @@ class UpdateDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:update-domain')
+            ->setName('domain:update')
             ->setDescription('Update a domain')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to update')
             ->addOption('addns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Add nameserver (format: ns/ip/ip)')

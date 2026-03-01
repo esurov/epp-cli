@@ -11,7 +11,7 @@ class HelloCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:hello')
+            ->setName('server:hello')
             ->setDescription('Send a hello request to the EPP server')
             ->addOption('lang', null, InputOption::VALUE_REQUIRED, 'Language to verify')
             ->addOption('ver', null, InputOption::VALUE_REQUIRED, 'Version to verify')

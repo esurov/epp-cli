@@ -16,7 +16,7 @@ class DeleteDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:delete-domain')
+            ->setName('domain:delete')
             ->setDescription('Delete a domain')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to delete')
             ->addOption('scheduledate', null, InputOption::VALUE_REQUIRED, 'When to delete (now|expiration)')

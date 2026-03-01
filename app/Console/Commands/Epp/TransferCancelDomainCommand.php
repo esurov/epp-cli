@@ -14,7 +14,7 @@ class TransferCancelDomainCommand extends EppCommand
     protected function configure(): void
     {
         $this
-            ->setName('epp:transfer-cancel-domain')
+            ->setName('domain:transfer-cancel')
             ->setDescription('Cancel a domain transfer')
             ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to cancel transfer for')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
