@@ -42,7 +42,7 @@ class EppConnectionService
 
         $this->connection = new atEppConnection($logging);
 
-        $hostnamePrefix = $this->ssl ? 'ssl://' : '';
+        $hostnamePrefix = $this->ssl ? 'ssl://' : 'tcp://';
         $this->connection->setHostname($hostnamePrefix . $this->hostname);
         $this->connection->setPort($this->port);
         $this->connection->setTimeout($this->timeout);
