@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Config;
 use Metaregistrar\EPP\atEppConnection;
 use Metaregistrar\EPP\eppException;
 
@@ -23,15 +24,14 @@ class EppConnectionService
     public static function fromConfig(): self
     {
         return new self(
-            hostname: config('epp.host'),
-            port: config('epp.port'),
-            username: config('epp.username'),
-            password: config('epp.password'),
-            ssl: config('epp.ssl'),
-            verifyPeer: config('epp.verify_peer'),
-
-            timeout: config('epp.timeout'),
-            logDir: config('epp.log_dir') ?? '',
+            hostname: Config::get('epp.host'),
+            port: Config::get('epp.port'),
+            username: Config::get('epp.username'),
+            password: Config::get('epp.password'),
+            ssl: Config::get('epp.ssl'),
+            verifyPeer: Config::get('epp.verify_peer'),
+            timeout: Config::get('epp.timeout'),
+            logDir: Config::get('epp.log_dir') ?? '',
         );
     }
 

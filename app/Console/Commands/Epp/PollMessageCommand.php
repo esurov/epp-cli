@@ -2,28 +2,29 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppPollRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\confirm;
 
-class PollMessageCommand extends Command
+class PollMessageCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:poll-message')
+            ->setDescription('Poll for server messages')
+            ->addOption('delete-after-poll', null, InputOption::VALUE_NONE, 'Delete the message after polling')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:poll-message
-        {--delete-after-poll : Delete the message after polling}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Poll for server messages';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $deleteAfterPoll = $this->option('delete-after-poll');
 
-        if (! $deleteAfterPoll && ! $this->option('no-interaction')) {
+        if (! $deleteAfterPoll && ! $this->input->getOption('no-interaction')) {
             $deleteAfterPoll = confirm('Delete messages after polling?', false);
         }
 

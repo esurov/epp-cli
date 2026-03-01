@@ -1,0 +1,101 @@
+#!/usr/bin/env php
+<?php
+
+use App\Console\Commands\Epp\ChangePasswordCommand;
+use App\Console\Commands\Epp\CheckDomainCommand;
+use App\Console\Commands\Epp\CreateContactCommand;
+use App\Console\Commands\Epp\CreateDomainCommand;
+use App\Console\Commands\Epp\DeleteContactCommand;
+use App\Console\Commands\Epp\DeleteDomainCommand;
+use App\Console\Commands\Epp\HelloCommand;
+use App\Console\Commands\Epp\InfoContactCommand;
+use App\Console\Commands\Epp\InfoDomainCommand;
+use App\Console\Commands\Epp\PollMessageCommand;
+use App\Console\Commands\Epp\TransferCancelDomainCommand;
+use App\Console\Commands\Epp\TransferQueryDomainCommand;
+use App\Console\Commands\Epp\TransferRequestDomainCommand;
+use App\Console\Commands\Epp\UpdateContactCommand;
+use App\Console\Commands\Epp\UpdateDomainCommand;
+use App\Console\Commands\Epp\WithdrawDomainCommand;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+
+use function Laravel\Prompts\select;
+
+// Autoloader: support running from source or as a PHAR
+foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../autoload.php'] as $file) {
+    if (file_exists($file)) {
+        require $file;
+        break;
+    }
+}
+
+// Load .env from CWD, or from beside the script/phar
+$envPaths = [getcwd()];
+$pharPath = Phar::running(false);
+if ($pharPath) {
+    $envPaths[] = dirname($pharPath);
+} else {
+    $envPaths[] = dirname(__DIR__);
+}
+Dotenv\Dotenv::createImmutable($envPaths)->safeLoad();
+
+// Build the application
+$app = new Application('EPP CLI', '1.0.0');
+
+$commands = [
+    new HelloCommand,
+    new CheckDomainCommand,
+    new InfoDomainCommand,
+    new CreateDomainCommand,
+    new UpdateDomainCommand,
+    new DeleteDomainCommand,
+    new WithdrawDomainCommand,
+    new TransferQueryDomainCommand,
+    new TransferRequestDomainCommand,
+    new TransferCancelDomainCommand,
+    new InfoContactCommand,
+    new CreateContactCommand,
+    new UpdateContactCommand,
+    new DeleteContactCommand,
+    new ChangePasswordCommand,
+    new PollMessageCommand,
+];
+
+$app->addCommands($commands);
+
+// Default command: interactive picker
+$default = new class extends Command {
+    protected function configure(): void
+    {
+        $this->setName('_select')->setHidden(true);
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        /** @var Application $app */
+        $app = $this->getApplication();
+        $choices = [];
+
+        foreach ($app->all() as $command) {
+            $name = $command->getName();
+            if (str_starts_with($name, 'epp:')) {
+                $choices[$name] = $name . ' - ' . $command->getDescription();
+            }
+        }
+
+        ksort($choices);
+
+        $selected = select('Select a command:', $choices);
+
+        return $app->find($selected)->run(new ArrayInput([]), $output);
+    }
+};
+
+$app->add($default);
+$app->setDefaultCommand('_select');
+
+$app->run();

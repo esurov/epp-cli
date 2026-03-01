@@ -2,24 +2,25 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\eppCheckDomainRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class CheckDomainCommand extends Command
+class CheckDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:check-domain')
+            ->setDescription('Check domain name availability')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Domain name(s) to check')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:check-domain
-        {--domain=* : Domain name(s) to check}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Check domain name availability';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domains = $this->option('domain');
 

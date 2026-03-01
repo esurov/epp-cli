@@ -2,27 +2,28 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppTransferRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
-class TransferRequestDomainCommand extends Command
+class TransferRequestDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:transfer-request-domain')
+            ->setDescription('Request a domain transfer')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to transfer')
+            ->addOption('authinfo', null, InputOption::VALUE_REQUIRED, 'Authorization code for the transfer')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:transfer-request-domain
-        {--domain= : Domain name to transfer}
-        {--authinfo= : Authorization code for the transfer}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Request a domain transfer';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
         $auth = $this->option('authinfo') ?? password('Enter the authorization code (optional, press Enter to skip):');

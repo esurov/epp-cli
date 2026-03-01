@@ -2,25 +2,26 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\eppInfoContactRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class InfoContactCommand extends Command
+class InfoContactCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:info-contact')
+            ->setDescription('Get information about a contact')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to query')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:info-contact
-        {--id= : Contact ID to query}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Get information about a contact';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $id = $this->option('id') ?? text('Enter the contact ID:', required: true);
 

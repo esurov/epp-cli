@@ -2,25 +2,26 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppTransferRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class TransferCancelDomainCommand extends Command
+class TransferCancelDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:transfer-cancel-domain')
+            ->setDescription('Cancel a domain transfer')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to cancel transfer for')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:transfer-cancel-domain
-        {--domain= : Domain name to cancel transfer for}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Cancel a domain transfer';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
 

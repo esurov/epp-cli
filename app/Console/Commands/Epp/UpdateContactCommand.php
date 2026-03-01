@@ -2,42 +2,43 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppUpdateContactExtension;
 use Metaregistrar\EPP\atEppUpdateContactRequest;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Metaregistrar\EPP\eppInfoContactRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class UpdateContactCommand extends Command
+class UpdateContactCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:update-contact')
+            ->setDescription('Update an existing contact')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to update')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Contact name')
+            ->addOption('street', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Street address')
+            ->addOption('city', null, InputOption::VALUE_REQUIRED, 'City')
+            ->addOption('postalcode', null, InputOption::VALUE_REQUIRED, 'Postal code')
+            ->addOption('country', null, InputOption::VALUE_REQUIRED, 'Country code')
+            ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email address')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Contact type (privateperson|organisation|role)')
+            ->addOption('org', null, InputOption::VALUE_REQUIRED, 'Organisation name')
+            ->addOption('voice', null, InputOption::VALUE_REQUIRED, 'Phone number')
+            ->addOption('fax', null, InputOption::VALUE_REQUIRED, 'Fax number')
+            ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
+            ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
+            ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:update-contact
-        {--id= : Contact ID to update}
-        {--name= : Contact name}
-        {--street=* : Street address}
-        {--city= : City}
-        {--postalcode= : Postal code}
-        {--country= : Country code}
-        {--email= : Email address}
-        {--type= : Contact type (privateperson|organisation|role)}
-        {--org= : Organisation name}
-        {--voice= : Phone number}
-        {--fax= : Fax number}
-        {--disclose-phone= : Disclose phone in WHOIS (0|1)}
-        {--disclose-fax= : Disclose fax in WHOIS (0|1)}
-        {--disclose-email= : Disclose email in WHOIS (0|1)}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Update an existing contact';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $id = $this->option('id') ?? text('Enter the contact ID to update:', required: true);
 

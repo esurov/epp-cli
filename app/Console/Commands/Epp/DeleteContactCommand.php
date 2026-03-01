@@ -2,25 +2,26 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppDeleteRequest;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\text;
 
-class DeleteContactCommand extends Command
+class DeleteContactCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:delete-contact')
+            ->setDescription('Delete a contact')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact ID to delete')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:delete-contact
-        {--id= : Contact ID to delete}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Delete a contact';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $id = $this->option('id') ?? text('Enter the contact ID to delete:', required: true);
 

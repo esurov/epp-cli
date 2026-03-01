@@ -2,23 +2,24 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\eppHelloRequest;
+use Symfony\Component\Console\Input\InputOption;
 
-class HelloCommand extends Command
+class HelloCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:hello')
+            ->setDescription('Send a hello request to the EPP server')
+            ->addOption('lang', null, InputOption::VALUE_REQUIRED, 'Language to verify')
+            ->addOption('ver', null, InputOption::VALUE_REQUIRED, 'Version to verify')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:hello
-        {--lang= : Language to verify}
-        {--ver= : Version to verify}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Send a hello request to the EPP server';
-
-    public function handle(): int
+    protected function handle(): int
     {
         return $this->executeEppOperation(function ($connection) {
             $request = new eppHelloRequest;

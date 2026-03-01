@@ -1,0 +1,19 @@
+{
+    "output": "build/epp-cli.phar",
+    "main": "bin/epp",
+    "directories": ["app"],
+    "finder": [
+        {
+            "in": "vendor",
+            "name": "*.php",
+            "exclude": [
+                "humbug"
+            ]
+        }
+    ],
+    "force-autodiscovery": true,
+    "exclude-dev-files": false,
+    "dump-autoload": false,
+    "compression": "GZ",
+    "chmod": "0755"
+}

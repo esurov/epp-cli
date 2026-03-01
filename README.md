@@ -1,42 +1,47 @@
 # EPP CLI
 
-A command-line interface for managing .at domains via the Extensible Provisioning Protocol (EPP). Built on Laravel and the [metaregistrar/php-epp-client](https://github.com/metaregistrar/php-epp-client) library, it provides 16 Artisan commands for domain and contact operations against the nic.at registry.
+A lightweight command-line interface for managing .at domains via the Extensible Provisioning Protocol (EPP). Built on Symfony Console and the [metaregistrar/php-epp-client](https://github.com/metaregistrar/php-epp-client) library, it provides 16 commands for domain and contact operations against the nic.at registry.
+
+Distributable as a single PHAR file.
 
 ## Requirements
 
 - PHP 8.2+
-- Composer
-- An EPP account with nic.at (or compatible registry)
-
-### PHP Extensions
-
-| Extension | Required by | Purpose |
-|---|---|---|
-| `openssl` | Laravel, EPP client | SSL/TLS connections to the EPP server |
-| `dom` | EPP client | Parsing and building EPP XML messages |
-| `libxml` | EPP client | XML processing (underlying `dom`) |
-| `mbstring` | Laravel, EPP client | Multibyte string handling |
-| `ctype` | Laravel | Character type checking |
-| `filter` | Laravel | Input validation and sanitization |
-| `hash` | Laravel | Hashing functions |
-| `session` | Laravel | Session support |
-| `tokenizer` | Laravel | PHP code tokenization |
-
-Most of these are enabled by default in standard PHP installations. Verify with `php -m`.
+- Extensions: `openssl`, `dom`, `mbstring`
 
 ## Installation
+
+### From source
 
 ```bash
 git clone <repository-url>
 cd epp-cli
 composer install
 cp .env.example .env
-php artisan key:generate
+```
+
+### As PHAR
+
+Download `epp-cli.phar` from the releases page and place it anywhere on your system:
+
+```bash
+chmod +x epp-cli.phar
+./epp-cli.phar epp:hello
+```
+
+The PHAR loads `.env` from the current working directory.
+
+## Building the PHAR
+
+```bash
+composer install --no-dev
+vendor/bin/box compile
+# produces build/epp-cli.phar
 ```
 
 ## Configuration
 
-Add your EPP credentials and connection settings to `.env`:
+Add your EPP credentials to `.env` in the working directory:
 
 ```env
 EPP_HOST=epp.nic.at
@@ -60,7 +65,13 @@ EPP_LOG_DIR=
 | `EPP_TIMEOUT` | `10` | Connection timeout in seconds |
 | `EPP_LOG_DIR` | | Directory for EPP XML logs (disabled when empty) |
 
-## Commands
+## Usage
+
+Run without arguments for an interactive command picker:
+
+```bash
+php bin/epp
+```
 
 All commands support `--cltrid` (client transaction ID, 4-64 chars) and `--logdir` (per-call log directory override). When required options are omitted, commands prompt interactively.
 
@@ -68,29 +79,29 @@ All commands support `--cltrid` (client transaction ID, 4-64 chars) and `--logdi
 
 ```bash
 # Test connection and server capabilities
-php artisan epp:hello
-php artisan epp:hello --lang=en --ver=1.0
+php bin/epp epp:hello
+php bin/epp epp:hello --lang=en --ver=1.0
 
 # Change EPP password
-php artisan epp:change-password --newpassword=mynewpass123
+php bin/epp epp:change-password --newpassword=mynewpass123
 
 # Poll server messages
-php artisan epp:poll-message
-php artisan epp:poll-message --delete-after-poll
+php bin/epp epp:poll-message
+php bin/epp epp:poll-message --delete-after-poll
 ```
 
 ### Domains
 
 ```bash
 # Check availability
-php artisan epp:check-domain --domain=example.at
-php artisan epp:check-domain --domain=one.at --domain=two.at
+php bin/epp epp:check-domain --domain=example.at
+php bin/epp epp:check-domain --domain=one.at --domain=two.at
 
 # Get domain info
-php artisan epp:info-domain --domain=example.at
+php bin/epp epp:info-domain --domain=example.at
 
 # Create domain
-php artisan epp:create-domain \
+php bin/epp epp:create-domain \
   --domain=example.at \
   --nameserver=ns1.example.com \
   --nameserver=ns2.example.com/1.2.3.4 \
@@ -99,25 +110,25 @@ php artisan epp:create-domain \
   --authinfo='s3cretAuth!'
 
 # Update domain (add/remove nameservers, contacts, statuses, DNSSEC)
-php artisan epp:update-domain --domain=example.at --addns=ns3.example.com
-php artisan epp:update-domain --domain=example.at --restore
-php artisan epp:update-domain --domain=example.at --delsecdns-all
+php bin/epp epp:update-domain --domain=example.at --addns=ns3.example.com
+php bin/epp epp:update-domain --domain=example.at --restore
+php bin/epp epp:update-domain --domain=example.at --delsecdns-all
 
 # Delete domain
-php artisan epp:delete-domain --domain=example.at --scheduledate=now
+php bin/epp epp:delete-domain --domain=example.at --scheduledate=now
 
 # Withdraw domain
-php artisan epp:withdraw-domain --domain=example.at --deletezone
+php bin/epp epp:withdraw-domain --domain=example.at --deletezone
 ```
 
 ### Contacts
 
 ```bash
 # Get contact info
-php artisan epp:info-contact --id=CONTACT001
+php bin/epp epp:info-contact --id=CONTACT001
 
 # Create contact
-php artisan epp:create-contact \
+php bin/epp epp:create-contact \
   --name="Jane Doe" \
   --street="Main Street 1" \
   --city=Vienna \
@@ -127,23 +138,23 @@ php artisan epp:create-contact \
   --type=privateperson
 
 # Update contact
-php artisan epp:update-contact --id=CONTACT001 --email=new@example.at
+php bin/epp epp:update-contact --id=CONTACT001 --email=new@example.at
 
 # Delete contact
-php artisan epp:delete-contact --id=CONTACT001
+php bin/epp epp:delete-contact --id=CONTACT001
 ```
 
 ### Transfers
 
 ```bash
 # Query transfer status
-php artisan epp:transfer-query-domain --domain=example.at
+php bin/epp epp:transfer-query-domain --domain=example.at
 
 # Request transfer
-php artisan epp:transfer-request-domain --domain=example.at --authinfo=secret
+php bin/epp epp:transfer-request-domain --domain=example.at --authinfo=secret
 
 # Cancel transfer
-php artisan epp:transfer-cancel-domain --domain=example.at
+php bin/epp epp:transfer-cancel-domain --domain=example.at
 ```
 
 ## Output Format

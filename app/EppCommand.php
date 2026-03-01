@@ -1,15 +1,54 @@
 <?php
 
-namespace App\Concerns;
+namespace App;
 
 use App\Services\EppConnectionService;
 use Metaregistrar\EPP\eppException;
 use Metaregistrar\EPP\eppHost;
 use Metaregistrar\EPP\eppRequest;
 use Metaregistrar\EPP\eppSecdns;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
-trait InteractsWithEpp
+abstract class EppCommand extends Command
 {
+    protected InputInterface $input;
+
+    protected SymfonyStyle $io;
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $this->input = $input;
+        $this->io = new SymfonyStyle($input, $output);
+
+        return $this->handle();
+    }
+
+    abstract protected function handle(): int;
+
+    protected function option(string $name): mixed
+    {
+        return $this->input->getOption($name);
+    }
+
+    protected function line(string $message): void
+    {
+        $this->io->writeln($message);
+    }
+
+    protected function error(string $message): void
+    {
+        $this->io->error($message);
+    }
+
+    protected function newLine(int $count = 1): void
+    {
+        $this->io->newLine($count);
+    }
+
     /**
      * Execute an EPP operation with automatic connect/disconnect.
      */

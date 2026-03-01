@@ -2,32 +2,33 @@
 
 namespace App\Console\Commands\Epp;
 
-use App\Concerns\InteractsWithEpp;
-use Illuminate\Console\Command;
+use App\EppCommand;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppCreateDomainRequest;
 use Metaregistrar\EPP\atEppDomain;
+use Symfony\Component\Console\Input\InputOption;
 
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
-class CreateDomainCommand extends Command
+class CreateDomainCommand extends EppCommand
 {
-    use InteractsWithEpp;
+    protected function configure(): void
+    {
+        $this
+            ->setName('epp:create-domain')
+            ->setDescription('Create a new domain')
+            ->addOption('domain', null, InputOption::VALUE_REQUIRED, 'Domain name to create')
+            ->addOption('nameserver', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Nameserver (format: ns/ip/ip)')
+            ->addOption('registrant', null, InputOption::VALUE_REQUIRED, 'Registrant contact handle')
+            ->addOption('techc', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Tech contact handle(s)')
+            ->addOption('authinfo', null, InputOption::VALUE_REQUIRED, 'Authorization info')
+            ->addOption('secdns', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'DNSSEC data (format: keyTag=>..., alg=>..., digestType=>..., digest=>...)')
+            ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
+    }
 
-    protected $signature = 'epp:create-domain
-        {--domain= : Domain name to create}
-        {--nameserver=* : Nameserver (format: ns/ip/ip)}
-        {--registrant= : Registrant contact handle}
-        {--techc=* : Tech contact handle(s)}
-        {--authinfo= : Authorization info}
-        {--secdns=* : DNSSEC data (format: keyTag=>..., alg=>..., digestType=>..., digest=>...)}
-        {--cltrid= : Client transaction ID (4-64 chars)}
-        {--logdir= : Directory for EPP log files}';
-
-    protected $description = 'Create a new domain';
-
-    public function handle(): int
+    protected function handle(): int
     {
         $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
         $nameservers = $this->option('nameserver');
