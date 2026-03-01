@@ -82,7 +82,9 @@ jobs:
         run: ./spc doctor --auto-fix || true
 
       - name: Download PHP sources
-        run: ./spc download --with-php="${PHP_VERSION}" --for-extensions="${EXTENSIONS}"
+        run: ./spc download --with-php="${PHP_VERSION}" --for-extensions="${EXTENSIONS}" --prefer-pre-built
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build micro.sfx
         run: ./spc build "${EXTENSIONS}" --build-micro
