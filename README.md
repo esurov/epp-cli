@@ -8,6 +8,22 @@ A command-line interface for managing .at domains via the Extensible Provisionin
 - Composer
 - An EPP account with nic.at (or compatible registry)
 
+### PHP Extensions
+
+| Extension | Required by | Purpose |
+|---|---|---|
+| `openssl` | Laravel, EPP client | SSL/TLS connections to the EPP server |
+| `dom` | EPP client | Parsing and building EPP XML messages |
+| `libxml` | EPP client | XML processing (underlying `dom`) |
+| `mbstring` | Laravel, EPP client | Multibyte string handling |
+| `ctype` | Laravel | Character type checking |
+| `filter` | Laravel | Input validation and sanitization |
+| `hash` | Laravel | Hashing functions |
+| `session` | Laravel | Session support |
+| `tokenizer` | Laravel | PHP code tokenization |
+
+Most of these are enabled by default in standard PHP installations. Verify with `php -m`.
+
 ## Installation
 
 ```bash
