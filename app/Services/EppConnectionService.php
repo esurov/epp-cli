@@ -47,8 +47,10 @@ class EppConnectionService
         $this->connection->setHostname($hostnamePrefix . $this->hostname);
         $this->connection->setPort($this->port);
         $this->connection->setTimeout($this->timeout);
-        $this->connection->setVerifyPeer($this->verifyPeer);
-        $this->connection->setAllowSelfSigned($this->allowSelfSigned);
+
+        if (! $this->verifyPeer) {
+            $this->connection->setVerifyPeer(false);
+        }
 
         if ($logging) {
             $this->connection->setLogFile(
