@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+use App\Console\Commands\SelfUpdateCommand;
 use App\Console\Commands\Epp\ChangePasswordCommand;
 use App\Console\Commands\Epp\CheckDomainCommand;
 use App\Console\Commands\Epp\CreateContactCommand;
@@ -158,6 +159,7 @@ $commands = [
     new DeleteContactCommand,
     new ChangePasswordCommand,
     new PollMessageCommand,
+    new SelfUpdateCommand,
 ];
 
 $app->addCommands($commands);
