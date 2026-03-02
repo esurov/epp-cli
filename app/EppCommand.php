@@ -63,7 +63,7 @@ abstract class EppCommand extends Command
             return $result ?? self::SUCCESS;
         } catch (eppException $e) {
             $this->error($e->getMessage());
-            $this->printConditions(json_decode($e->getReason(), true));
+            $this->printConditions(json_decode($e->getReason() ?? '', true));
 
             return self::FAILURE;
         } finally {

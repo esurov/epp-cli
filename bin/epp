@@ -28,6 +28,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 use function Laravel\Prompts\select;
 
+// Suppress deprecation notices from third-party libraries (e.g. dynamic properties in php-epp-client)
+error_reporting(E_ALL & ~E_DEPRECATED);
+
 // Autoloader: support running from source or as a PHAR
 foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../autoload.php'] as $file) {
     if (file_exists($file)) {
