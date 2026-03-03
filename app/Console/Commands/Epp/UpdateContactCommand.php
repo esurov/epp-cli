@@ -110,19 +110,19 @@ class UpdateContactCommand extends EppCommand
             $hideEmail = $this->option('disclose-email') !== null
                 ? ($this->option('disclose-email') == 0)
                 : ($interactive
-                    ? confirm('Hide email in WHOIS?', default: (bool) $infoResponse->getWhoisHideEmail())
+                    ? !confirm('Hide email in WHOIS?', default: (bool) $infoResponse->getWhoisHideEmail())
                     : $infoResponse->getWhoisHideEmail());
 
             $hidePhone = $this->option('disclose-phone') !== null
                 ? ($this->option('disclose-phone') == 0)
                 : ($interactive
-                    ? confirm('Hide phone in WHOIS?', default: (bool) $infoResponse->getWhoisHidePhone())
+                    ? !confirm('Hide phone in WHOIS?', default: (bool) $infoResponse->getWhoisHidePhone())
                     : $infoResponse->getWhoisHidePhone());
 
             $hideFax = $this->option('disclose-fax') !== null
                 ? ($this->option('disclose-fax') == 0)
                 : ($interactive
-                    ? confirm('Hide fax in WHOIS?', default: (bool) $infoResponse->getWhoisHideFax())
+                    ? !confirm('Hide fax in WHOIS?', default: (bool) $infoResponse->getWhoisHideFax())
                     : $infoResponse->getWhoisHideFax());
 
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
