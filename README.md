@@ -171,6 +171,18 @@ php bin/epp contact:create \
   --email=jane@example.at \
   --type=privateperson
 
+# Create contact and capture the handle for scripting
+HANDLE=$(php bin/epp contact:create \
+  --name="Jane Doe" \
+  --street="Main Street 1" \
+  --city=Vienna \
+  --postalcode=1010 \
+  --country=AT \
+  --email=jane@example.at \
+  --type=privateperson \
+  --output-handle-only)
+php bin/epp domain:create --domain=example.at --registrant=$HANDLE
+
 # Update contact
 php bin/epp contact:update --id=CONTACT001 --email=new@example.at
 

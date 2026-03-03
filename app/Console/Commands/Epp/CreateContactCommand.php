@@ -33,6 +33,7 @@ class CreateContactCommand extends EppCommand
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('output-handle-only', null, InputOption::VALUE_NONE, 'Only output the contact handle (for scripting)')
             ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
     }
 
@@ -82,6 +83,15 @@ class CreateContactCommand extends EppCommand
             $this->applyCltrid($request, $this->option('cltrid'));
 
             $response = $connection->request($request);
+            $handleOnly = $this->option('output-handle-only');
+
+            if ($handleOnly) {
+                if ($response->Success() && $id = $response->getContactId()) {
+                    $this->line($id);
+                }
+
+                return;
+            }
 
             if ($response->Success()) {
                 $this->line('SUCCESS: '.$response->getResultCode());
