@@ -8,7 +8,7 @@ use Metaregistrar\EPP\eppException;
 
 class EppConnectionService
 {
-    private atEppConnection $connection;
+    private ?atEppConnection $connection = null;
 
     public function __construct(
         private string $hostname,
@@ -57,7 +57,20 @@ class EppConnectionService
             );
         }
 
-        $this->connection->connect();
+        set_error_handler(function (int $errno, string $errstr): never {
+            throw new eppException("Connection failed: $errstr");
+        });
+
+        try {
+            $this->connection->connect();
+        } catch (eppException $e) {
+            $this->connection = null;
+
+            throw $e;
+        } finally {
+            restore_error_handler();
+        }
+
         $this->connection->setUsername($this->username);
         $this->connection->setPassword($this->password);
 
@@ -72,6 +85,10 @@ class EppConnectionService
 
     public function disconnect(): void
     {
+        if (! $this->connection) {
+            return;
+        }
+
         try {
             $this->connection->logout();
             $this->connection->disconnect();

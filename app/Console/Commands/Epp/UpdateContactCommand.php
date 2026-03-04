@@ -3,6 +3,9 @@
 namespace App\Console\Commands\Epp;
 
 use App\EppCommand;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppUpdateContactExtension;
@@ -10,8 +13,6 @@ use Metaregistrar\EPP\atEppUpdateContactRequest;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Metaregistrar\EPP\eppInfoContactRequest;
 use Symfony\Component\Console\Input\InputOption;
-
-use function Laravel\Prompts\text;
 
 class UpdateContactCommand extends EppCommand
 {
@@ -58,34 +59,71 @@ class UpdateContactCommand extends EppCommand
             $existingContact = $infoResponse->getContact();
             $existingPostal = $existingContact->getPostalInfo(0);
 
-            $name = $this->option('name') ?? $existingPostal->getName();
-            $org = $this->option('org') ?? $existingPostal->getOrganisationName();
-            $city = $this->option('city') ?? $existingPostal->getCity();
-            $postalcode = $this->option('postalcode') ?? $existingPostal->getZipcode();
-            $country = $this->option('country') ?? $existingPostal->getCountrycode();
+            $interactive = $this->hasNoContactOptions();
+
+            $name = $this->option('name')
+                ?? ($interactive ? text('Contact name:', default: $existingPostal->getName() ?? '', required: true) : $existingPostal->getName());
+
+            $org = $this->option('org')
+                ?? ($interactive ? text('Organisation name:', default: $existingPostal->getOrganisationName() ?? '') : $existingPostal->getOrganisationName());
 
             $street = $this->option('street');
             if (empty($street)) {
-                $street = [];
+                $existingStreets = [];
                 for ($i = 0; $i < $existingPostal->getStreetCount(); $i++) {
-                    $street[] = $existingPostal->getStreet($i);
+                    $existingStreets[] = $existingPostal->getStreet($i);
+                }
+
+                if ($interactive) {
+                    $street = [text('Street address:', default: implode(', ', $existingStreets), required: true)];
+                } else {
+                    $street = $existingStreets;
                 }
             }
 
-            $type = $this->option('type') ?? $infoResponse->getPersonType();
-            $email = $this->option('email') ?? $existingContact->getEmail();
-            $phone = $this->option('voice') ?? $existingContact->getVoice();
-            $fax = $this->option('fax') ?? $existingContact->getFax();
+            $city = $this->option('city')
+                ?? ($interactive ? text('City:', default: $existingPostal->getCity() ?? '', required: true) : $existingPostal->getCity());
+
+            $postalcode = $this->option('postalcode')
+                ?? ($interactive ? text('Postal code:', default: $existingPostal->getZipcode() ?? '', required: true) : $existingPostal->getZipcode());
+
+            $country = $this->option('country')
+                ?? ($interactive ? text('Country code (e.g. AT):', default: $existingPostal->getCountrycode() ?? '', required: true) : $existingPostal->getCountrycode());
+
+            $existingType = $infoResponse->getPersonType();
+            $type = $this->option('type')
+                ?? ($interactive ? select(
+                    'Contact type:',
+                    ['privateperson' => 'Private Person', 'organisation' => 'Organisation', 'role' => 'Role'],
+                    $existingType,
+                ) : $existingType);
+
+            $email = $this->option('email')
+                ?? ($interactive ? text('Email address:', default: $existingContact->getEmail() ?? '', required: true) : $existingContact->getEmail());
+
+            $phone = $this->option('voice')
+                ?? ($interactive ? text('Phone number:', default: $existingContact->getVoice() ?? '') : $existingContact->getVoice());
+
+            $fax = $this->option('fax')
+                ?? ($interactive ? text('Fax number:', default: $existingContact->getFax() ?? '') : $existingContact->getFax());
 
             $hideEmail = $this->option('disclose-email') !== null
                 ? ($this->option('disclose-email') == 0)
-                : $infoResponse->getWhoisHideEmail();
+                : ($interactive
+                    ? !confirm('Hide email in WHOIS?', default: (bool) $infoResponse->getWhoisHideEmail())
+                    : $infoResponse->getWhoisHideEmail());
+
             $hidePhone = $this->option('disclose-phone') !== null
                 ? ($this->option('disclose-phone') == 0)
-                : $infoResponse->getWhoisHidePhone();
+                : ($interactive
+                    ? !confirm('Hide phone in WHOIS?', default: (bool) $infoResponse->getWhoisHidePhone())
+                    : $infoResponse->getWhoisHidePhone());
+
             $hideFax = $this->option('disclose-fax') !== null
                 ? ($this->option('disclose-fax') == 0)
-                : $infoResponse->getWhoisHideFax();
+                : ($interactive
+                    ? !confirm('Hide fax in WHOIS?', default: (bool) $infoResponse->getWhoisHideFax())
+                    : $infoResponse->getWhoisHideFax());
 
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);
@@ -98,10 +136,10 @@ class UpdateContactCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Contact update failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Contact update failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());
@@ -109,5 +147,21 @@ class UpdateContactCommand extends EppCommand
             $this->newLine();
             $this->printTransactionIds($response);
         });
+    }
+
+    private function hasNoContactOptions(): bool
+    {
+        $contactOptions = [
+            'name', 'street', 'city', 'postalcode', 'country', 'email',
+            'type', 'org', 'voice', 'fax', 'disclose-phone', 'disclose-fax', 'disclose-email',
+        ];
+
+        foreach ($contactOptions as $option) {
+            if ($this->option($option) !== null && $this->option($option) !== []) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

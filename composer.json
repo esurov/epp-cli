@@ -16,7 +16,7 @@
         "ext-mbstring": "*",
         "ext-openssl": "*",
         "laravel/prompts": "^0.3",
-        "metaregistrar/php-epp-client": "^1.0",
+        "metaregistrar/php-epp-client": "dev-master",
         "symfony/console": "^7.0|^8.0",
         "vlucas/phpdotenv": "^5.6"
     },

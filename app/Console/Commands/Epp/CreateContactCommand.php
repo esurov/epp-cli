@@ -3,15 +3,14 @@
 namespace App\Console\Commands\Epp;
 
 use App\EppCommand;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppCreateContactExtension;
 use Metaregistrar\EPP\atEppCreateContactRequest;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Symfony\Component\Console\Input\InputOption;
-
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\text;
 
 class CreateContactCommand extends EppCommand
 {
@@ -34,6 +33,7 @@ class CreateContactCommand extends EppCommand
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
+            ->addOption('output-handle-only', null, InputOption::VALUE_NONE, 'Only output the contact handle (for scripting)')
             ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
     }
 
@@ -59,13 +59,16 @@ class CreateContactCommand extends EppCommand
             return self::FAILURE;
         }
 
-        $org = $this->option('org');
-        $phone = $this->option('voice');
-        $fax = $this->option('fax');
+        $org = $this->option('org') ?? text('Organisation name:');
+        $phone = $this->option('voice') ?? text('Phone number:');
+        $fax = $this->option('fax') ?? text('Fax number:');
 
-        $hideEmail = $this->resolveDiscloseFlag('disclose-email');
-        $hidePhone = $this->resolveDiscloseFlag('disclose-phone');
-        $hideFax = $this->resolveDiscloseFlag('disclose-fax');
+        $hideEmail = $this->resolveDiscloseFlag('disclose-email')
+            ?? !confirm('Hide email in WHOIS?', default: false);
+        $hidePhone = $this->resolveDiscloseFlag('disclose-phone')
+            ?? !confirm('Hide phone in WHOIS?', default: false);
+        $hideFax = $this->resolveDiscloseFlag('disclose-fax')
+            ?? !confirm('Hide fax in WHOIS?', default: false);
 
         return $this->executeEppOperation(function ($connection) use ($name, $street, $city, $postalcode, $country, $email, $type, $org, $phone, $fax, $hideEmail, $hidePhone, $hideFax) {
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
@@ -80,12 +83,21 @@ class CreateContactCommand extends EppCommand
             $this->applyCltrid($request, $this->option('cltrid'));
 
             $response = $connection->request($request);
+            $handleOnly = $this->option('output-handle-only');
+
+            if ($handleOnly) {
+                if ($response->Success() && $id = $response->getContactId()) {
+                    $this->line($id);
+                }
+
+                return;
+            }
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Contact create failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Contact create failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());
@@ -99,7 +111,7 @@ class CreateContactCommand extends EppCommand
         });
     }
 
-    private function resolveDiscloseFlag(string $option): bool
+    private function resolveDiscloseFlag(string $option): ?bool
     {
         $rawValue = $this->option($option);
 

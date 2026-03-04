@@ -20,7 +20,6 @@ Download the binary for your platform from the [releases page](../../releases):
 |---|---|
 | Linux x86_64 | `epp-cli-linux-x86_64` |
 | Linux ARM64 | `epp-cli-linux-aarch64` |
-| macOS Intel | `epp-cli-macos-x86_64` |
 | macOS Apple Silicon | `epp-cli-macos-aarch64` |
 
 ```bash
@@ -72,7 +71,7 @@ The first build downloads and compiles PHP from source — expect 10-30 minutes 
 
 ### CI/CD
 
-Push a `v*` tag to trigger the GitHub Actions workflow, which builds static binaries for all four platforms (linux-x86_64, linux-aarch64, macos-x86_64, macos-aarch64) and attaches them to a GitHub release. You can also trigger the workflow manually from the Actions tab.
+Push a `v*` tag to trigger the GitHub Actions workflow, which builds static binaries for all platforms (linux-x86_64, linux-aarch64, macos-aarch64) and attaches them to a GitHub release. You can also trigger the workflow manually from the Actions tab.
 
 ## Configuration
 
@@ -171,6 +170,18 @@ php bin/epp contact:create \
   --country=AT \
   --email=jane@example.at \
   --type=privateperson
+
+# Create contact and capture the handle for scripting
+HANDLE=$(php bin/epp contact:create \
+  --name="Jane Doe" \
+  --street="Main Street 1" \
+  --city=Vienna \
+  --postalcode=1010 \
+  --country=AT \
+  --email=jane@example.at \
+  --type=privateperson \
+  --output-handle-only)
+php bin/epp domain:create --domain=example.at --registrant=$HANDLE
 
 # Update contact
 php bin/epp contact:update --id=CONTACT001 --email=new@example.at

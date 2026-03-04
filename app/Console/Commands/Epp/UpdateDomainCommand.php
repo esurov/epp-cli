@@ -3,6 +3,8 @@
 namespace App\Console\Commands\Epp;
 
 use App\EppCommand;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppUndeleteRequest;
@@ -11,8 +13,6 @@ use Metaregistrar\EPP\eppHost;
 use Metaregistrar\EPP\eppInfoDomainRequest;
 use Metaregistrar\EPP\eppStatus;
 use Symfony\Component\Console\Input\InputOption;
-
-use function Laravel\Prompts\text;
 
 class UpdateDomainCommand extends EppCommand
 {
@@ -57,10 +57,10 @@ class UpdateDomainCommand extends EppCommand
                 $response = $connection->request($request);
 
                 if ($response->Success()) {
-                    $this->line('SUCCESS: ' . $response->getResultCode());
+                    $this->line('SUCCESS: '.$response->getResultCode());
                 } else {
-                    $this->line('FAILED: ' . $response->getResultCode());
-                    $this->line('Domain restore failed: ' . $response->getResultMessage());
+                    $this->line('FAILED: '.$response->getResultCode());
+                    $this->line('Domain restore failed: '.$response->getResultMessage());
                 }
 
                 $this->printConditions($response->getExtensionResult());
@@ -69,135 +69,284 @@ class UpdateDomainCommand extends EppCommand
                 $this->printTransactionIds($response);
             }
 
-            $addns = $this->option('addns');
-            $delns = $this->option('delns');
-            $addstatus = $this->option('addstatus');
-            $delstatus = $this->option('delstatus');
-            $registrant = $this->option('registrant');
-            $addtechc = $this->option('addtechc');
-            $deltechc = $this->option('deltechc');
-            $addsecdns = $this->option('addsecdns');
-            $delsecdns = $this->option('delsecdns');
-            $delallsecdns = $this->option('delsecdns-all');
-            $auth = $this->option('authinfo');
-
-            $hasChanges = $addns || $delns || $addstatus || $delstatus || $registrant
-                || $addtechc || $deltechc || $addsecdns || $delsecdns || $delallsecdns || $auth;
-
-            if (! $hasChanges) {
-                return;
+            if ($this->hasNoDomainOptions()) {
+                return $this->handleInteractive($connection, $domain);
             }
 
-            $chg = new atEppDomain($domain);
-            $add = $rem = null;
-
-            if ($registrant) {
-                $chg->setRegistrant(new atEppContactHandle($registrant, 'reg'));
-            }
-
-            if ($auth) {
-                $chg->setAuthorisationCode($auth);
-            }
-
-            // Handle nameservers
-            foreach ($delns as $ns) {
-                if (! $rem) {
-                    $rem = new atEppDomain($domain);
-                }
-                $rem->addHost(new eppHost($ns));
-            }
-
-            foreach ($addns as $ns) {
-                if (! $add) {
-                    $add = new atEppDomain($domain);
-                }
-                foreach ($this->parseNameserver($ns) as $host) {
-                    $add->addHost($host);
-                }
-            }
-
-            // Handle status
-            foreach ($delstatus as $status) {
-                if (! $rem) {
-                    $rem = new atEppDomain($domain);
-                }
-                $rem->addStatus(new eppStatus($status));
-            }
-
-            foreach ($addstatus as $status) {
-                if (! $add) {
-                    $add = new atEppDomain($domain);
-                }
-                $statusInfo = explode('/', $status);
-                $add->addStatus(new eppStatus($statusInfo[0], null, $statusInfo[1] ?? null));
-            }
-
-            // Handle tech contacts
-            foreach ($deltechc as $handle) {
-                if (! $rem) {
-                    $rem = new atEppDomain($domain);
-                }
-                $rem->addContact(new atEppContactHandle($handle, 'tech'));
-            }
-
-            foreach ($addtechc as $handle) {
-                if (! $add) {
-                    $add = new atEppDomain($domain);
-                }
-                $add->addContact(new atEppContactHandle($handle, 'tech'));
-            }
-
-            // Handle DNSSEC add
-            foreach ($addsecdns as $secdnsStr) {
-                if ($secdns = $this->parseSecdns($secdnsStr)) {
-                    if (! $add) {
-                        $add = new atEppDomain($domain);
-                    }
-                    $add->addSecdns($secdns);
-                }
-            }
-
-            // Handle DNSSEC remove
-            foreach ($delsecdns as $secdnsStr) {
-                if ($secdns = $this->parseSecdns($secdnsStr)) {
-                    if (! $rem) {
-                        $rem = new atEppDomain($domain);
-                    }
-                    $rem->addSecdns($secdns);
-                }
-            }
-
-            // Handle delete all DNSSEC
-            if ($delallsecdns) {
-                $infoRequest = new eppInfoDomainRequest(new atEppDomain($domain));
-                $infoResponse = $connection->request($infoRequest);
-
-                if ($secdnsList = $infoResponse->getKeydata()) {
-                    if (! $rem) {
-                        $rem = new atEppDomain($domain);
-                    }
-                    foreach ($secdnsList as $n) {
-                        $rem->addSecdns($n);
-                    }
-                }
-            }
-
-            $request = new atEppUpdateDomainRequest($domain, $add, $rem, $chg, true);
-            $this->applyCltrid($request, $this->option('cltrid'));
-
-            $response = $connection->request($request);
-
-            if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
-            } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain update failed: ' . $response->getResultMessage());
-            }
-
-            $this->printConditions($response->getExtensionResult());
-
-            $this->newLine();
-            $this->printTransactionIds($response);
+            return $this->handleNonInteractive($connection, $domain);
         });
+    }
+
+    private function handleInteractive($connection, string $domain): void
+    {
+        $infoRequest = new eppInfoDomainRequest(new atEppDomain($domain));
+        $infoResponse = $connection->request($infoRequest);
+
+        $chg = new atEppDomain($domain);
+        $add = $rem = null;
+
+        // Registrant
+        $currentRegistrant = $infoResponse->getDomainRegistrant();
+        $newRegistrant = text('Registrant:', default: $currentRegistrant ?? '');
+        if ($newRegistrant && $newRegistrant !== $currentRegistrant) {
+            $chg->setRegistrant(new atEppContactHandle($newRegistrant, 'reg'));
+        }
+
+        // Nameservers
+        $currentNameservers = [];
+        if ($ns = $infoResponse->getDomainNameservers()) {
+            foreach ($ns as $host) {
+                $currentNameservers[] = $host->getHostname();
+            }
+        }
+
+        $this->line('Current nameservers: '.implode(', ', $currentNameservers));
+        $nsInput = text('Nameservers (comma-separated):', default: implode(', ', $currentNameservers));
+        $newNameservers = array_filter(array_map('trim', explode(',', $nsInput)));
+
+        $nsToRemove = array_diff($currentNameservers, $newNameservers);
+        $nsToAdd = array_diff($newNameservers, $currentNameservers);
+
+        foreach ($nsToRemove as $ns) {
+            if (! $rem) {
+                $rem = new atEppDomain($domain);
+            }
+            $rem->addHost(new eppHost($ns));
+        }
+
+        foreach ($nsToAdd as $ns) {
+            if (! $add) {
+                $add = new atEppDomain($domain);
+            }
+            foreach ($this->parseNameserver($ns) as $host) {
+                $add->addHost($host);
+            }
+        }
+
+        // Tech contacts
+        $currentTechContacts = [];
+        foreach ($infoResponse->getDomainContacts() as $contact) {
+            if ($contact->getContactType() === 'tech') {
+                $currentTechContacts[] = $contact->getContactHandle();
+            }
+        }
+
+        $this->line('Current tech contacts: '.implode(', ', $currentTechContacts));
+        $tcInput = text('Tech contacts (comma-separated):', default: implode(', ', $currentTechContacts));
+        $newTechContacts = array_filter(array_map('trim', explode(',', $tcInput)));
+
+        $tcToRemove = array_diff($currentTechContacts, $newTechContacts);
+        $tcToAdd = array_diff($newTechContacts, $currentTechContacts);
+
+        foreach ($tcToRemove as $handle) {
+            if (! $rem) {
+                $rem = new atEppDomain($domain);
+            }
+            $rem->addContact(new atEppContactHandle($handle, 'tech'));
+        }
+
+        foreach ($tcToAdd as $handle) {
+            if (! $add) {
+                $add = new atEppDomain($domain);
+            }
+            $add->addContact(new atEppContactHandle($handle, 'tech'));
+        }
+
+        // Auth info
+        $auth = text('New authorization info (leave empty to keep current):');
+        if ($auth) {
+            $chg->setAuthorisationCode($auth);
+        }
+
+        // DNSSEC
+        if ($secdnsList = $infoResponse->getKeydata()) {
+            $this->line('Current DNSSEC records: '.count($secdnsList));
+            if (confirm('Remove all DNSSEC data?', default: false)) {
+                if (! $rem) {
+                    $rem = new atEppDomain($domain);
+                }
+                foreach ($secdnsList as $n) {
+                    $rem->addSecdns($n);
+                }
+            }
+        }
+
+        $hasChanges = $add || $rem
+            || $newRegistrant !== $currentRegistrant
+            || $auth;
+
+        if (! $hasChanges) {
+            $this->line('No changes to apply.');
+
+            return;
+        }
+
+        $request = new atEppUpdateDomainRequest($domain, $add, $rem, $chg, true);
+        $this->applyCltrid($request, $this->option('cltrid'));
+
+        $response = $connection->request($request);
+
+        if ($response->Success()) {
+            $this->line('SUCCESS: '.$response->getResultCode());
+        } else {
+            $this->line('FAILED: '.$response->getResultCode());
+            $this->line('Domain update failed: '.$response->getResultMessage());
+        }
+
+        $this->printConditions($response->getExtensionResult());
+
+        $this->newLine();
+        $this->printTransactionIds($response);
+    }
+
+    private function handleNonInteractive($connection, string $domain): void
+    {
+        $addns = $this->option('addns');
+        $delns = $this->option('delns');
+        $addstatus = $this->option('addstatus');
+        $delstatus = $this->option('delstatus');
+        $registrant = $this->option('registrant');
+        $addtechc = $this->option('addtechc');
+        $deltechc = $this->option('deltechc');
+        $addsecdns = $this->option('addsecdns');
+        $delsecdns = $this->option('delsecdns');
+        $delallsecdns = $this->option('delsecdns-all');
+        $auth = $this->option('authinfo');
+
+        $hasChanges = $addns || $delns || $addstatus || $delstatus || $registrant
+            || $addtechc || $deltechc || $addsecdns || $delsecdns || $delallsecdns || $auth;
+
+        if (! $hasChanges) {
+            return;
+        }
+
+        $chg = new atEppDomain($domain);
+        $add = $rem = null;
+
+        if ($registrant) {
+            $chg->setRegistrant(new atEppContactHandle($registrant, 'reg'));
+        }
+
+        if ($auth) {
+            $chg->setAuthorisationCode($auth);
+        }
+
+        // Handle nameservers
+        foreach ($delns as $ns) {
+            if (! $rem) {
+                $rem = new atEppDomain($domain);
+            }
+            $rem->addHost(new eppHost($ns));
+        }
+
+        foreach ($addns as $ns) {
+            if (! $add) {
+                $add = new atEppDomain($domain);
+            }
+            foreach ($this->parseNameserver($ns) as $host) {
+                $add->addHost($host);
+            }
+        }
+
+        // Handle status
+        foreach ($delstatus as $status) {
+            if (! $rem) {
+                $rem = new atEppDomain($domain);
+            }
+            $rem->addStatus(new eppStatus($status));
+        }
+
+        foreach ($addstatus as $status) {
+            if (! $add) {
+                $add = new atEppDomain($domain);
+            }
+            $statusInfo = explode('/', $status);
+            $add->addStatus(new eppStatus($statusInfo[0], null, $statusInfo[1] ?? null));
+        }
+
+        // Handle tech contacts
+        foreach ($deltechc as $handle) {
+            if (! $rem) {
+                $rem = new atEppDomain($domain);
+            }
+            $rem->addContact(new atEppContactHandle($handle, 'tech'));
+        }
+
+        foreach ($addtechc as $handle) {
+            if (! $add) {
+                $add = new atEppDomain($domain);
+            }
+            $add->addContact(new atEppContactHandle($handle, 'tech'));
+        }
+
+        // Handle DNSSEC add
+        foreach ($addsecdns as $secdnsStr) {
+            if ($secdns = $this->parseSecdns($secdnsStr)) {
+                if (! $add) {
+                    $add = new atEppDomain($domain);
+                }
+                $add->addSecdns($secdns);
+            }
+        }
+
+        // Handle DNSSEC remove
+        foreach ($delsecdns as $secdnsStr) {
+            if ($secdns = $this->parseSecdns($secdnsStr)) {
+                if (! $rem) {
+                    $rem = new atEppDomain($domain);
+                }
+                $rem->addSecdns($secdns);
+            }
+        }
+
+        // Handle delete all DNSSEC
+        if ($delallsecdns) {
+            $infoRequest = new eppInfoDomainRequest(new atEppDomain($domain));
+            $infoResponse = $connection->request($infoRequest);
+
+            if ($secdnsList = $infoResponse->getKeydata()) {
+                if (! $rem) {
+                    $rem = new atEppDomain($domain);
+                }
+                foreach ($secdnsList as $n) {
+                    $rem->addSecdns($n);
+                }
+            }
+        }
+
+        $request = new atEppUpdateDomainRequest($domain, $add, $rem, $chg, true);
+        $this->applyCltrid($request, $this->option('cltrid'));
+
+        $response = $connection->request($request);
+
+        if ($response->Success()) {
+            $this->line('SUCCESS: '.$response->getResultCode());
+        } else {
+            $this->line('FAILED: '.$response->getResultCode());
+            $this->line('Domain update failed: '.$response->getResultMessage());
+        }
+
+        $this->printConditions($response->getExtensionResult());
+
+        $this->newLine();
+        $this->printTransactionIds($response);
+    }
+
+    private function hasNoDomainOptions(): bool
+    {
+        $domainOptions = [
+            'addns', 'delns', 'addstatus', 'delstatus', 'registrant',
+            'addtechc', 'deltechc', 'addsecdns', 'delsecdns', 'delsecdns-all',
+            'restore', 'authinfo',
+        ];
+
+        foreach ($domainOptions as $option) {
+            $value = $this->option($option);
+            if ($value !== null && $value !== [] && $value !== false) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

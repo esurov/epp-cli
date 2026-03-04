@@ -1,5 +1,6 @@
 {
     "output": "build/epp-cli.phar",
+    "git-tag": "git_tag",
     "directories": ["app"],
     "finder": [
         {

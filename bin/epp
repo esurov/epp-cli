@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+use App\Console\Commands\SelfUpdateCommand;
 use App\Console\Commands\Epp\ChangePasswordCommand;
 use App\Console\Commands\Epp\CheckDomainCommand;
 use App\Console\Commands\Epp\CreateContactCommand;
@@ -20,10 +21,16 @@ use App\Console\Commands\Epp\WithdrawDomainCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function Laravel\Prompts\select;
+
+// Suppress deprecation notices from third-party libraries (e.g. dynamic properties in php-epp-client)
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 // Autoloader: support running from source or as a PHAR
 foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../autoload.php'] as $file) {
@@ -43,8 +50,97 @@ if ($pharPath) {
 }
 Dotenv\Dotenv::createImmutable($envPaths)->safeLoad();
 
+// Resolve version from git tag
+$version = 'dev';
+$pharPath = Phar::running(false);
+if ($pharPath) {
+    // When running as PHAR, version is replaced at build time via Box
+    $version = '@git_tag@';
+} else {
+    $tag = trim((string) shell_exec('git -C ' . escapeshellarg(__DIR__) . ' describe --tags --abbrev=0 2>/dev/null'));
+    if ($tag !== '') {
+        $version = $tag;
+    }
+}
+
 // Build the application
-$app = new Application('EPP CLI', '1.0.0');
+$app = new class('EPP CLI', $version) extends Application {
+    protected function getDefaultInputDefinition(): InputDefinition
+    {
+        return new InputDefinition([
+            new InputArgument('command', InputArgument::REQUIRED, 'The command to execute'),
+            new InputOption('--help', '-h', InputOption::VALUE_NONE, 'Display help for the given command'),
+            new InputOption('--silent', null, InputOption::VALUE_NONE, 'Do not output any message'),
+            new InputOption('--quiet', '-q', InputOption::VALUE_NONE, 'Only errors are displayed. All other output is suppressed'),
+            new InputOption('--verbose', '-v|vv|vvv', InputOption::VALUE_NONE, 'Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug'),
+            new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display this application version'),
+            new InputOption('--ansi', '', InputOption::VALUE_NEGATABLE, 'Force (or disable --no-ansi) ANSI output', null),
+            new InputOption('--no-interaction', '-n', InputOption::VALUE_NONE, 'Do not ask any interactive question'),
+        ]);
+    }
+
+    public function doRun(InputInterface $input, OutputInterface $output): int
+    {
+        // When --help is used without a specific command, show app help + command list
+        if ($input->hasParameterOption(['--help', '-h'], true) && ! $input->getFirstArgument()) {
+            $output->writeln(<<<'HELP'
+<info>EPP CLI</info> - A command-line interface for managing .at domains via EPP.
+
+<comment>Usage:</comment>
+  epp-cli <command> [options]
+
+<comment>Examples:</comment>
+  epp-cli domain:check --name example.at
+  epp-cli domain:info --name example.at
+  epp-cli contact:info --id CON-12345
+
+<comment>Get help for a specific command:</comment>
+  epp-cli <command> --help
+
+<comment>Run interactively (no arguments):</comment>
+  epp-cli
+HELP);
+            $output->writeln('');
+
+            // Show available commands grouped by namespace
+            $builtIn = ['_select', 'help', 'list', 'completion'];
+            $grouped = [];
+            foreach ($this->all() as $command) {
+                $name = $command->getName();
+                if (in_array($name, $builtIn) || $command->isHidden()) {
+                    continue;
+                }
+                $parts = explode(':', $name, 2);
+                $ns = count($parts) > 1 ? $parts[0] : '';
+                $grouped[$ns][$name] = $command->getDescription();
+            }
+            ksort($grouped);
+
+            $output->writeln('<comment>Available commands:</comment>');
+            foreach ($grouped as $ns => $cmds) {
+                if ($ns) {
+                    $output->writeln(" <comment>$ns</comment>");
+                }
+                ksort($cmds);
+                foreach ($cmds as $name => $desc) {
+                    $output->writeln(sprintf('  <info>%-26s</info> %s', $name, $desc));
+                }
+            }
+
+            $output->writeln('');
+            $output->writeln('<comment>Global options:</comment>');
+            $output->writeln('  <info>-h, --help</info>       Display help for a command');
+            $output->writeln('  <info>-q, --quiet</info>      Suppress all output');
+            $output->writeln('  <info>-V, --version</info>    Display version');
+            $output->writeln('  <info>-n, --no-interaction</info>  Do not ask any interactive question');
+            $output->writeln('  <info>-v|vv|vvv</info>        Increase verbosity');
+
+            return 0;
+        }
+
+        return parent::doRun($input, $output);
+    }
+};
 
 $commands = [
     new HelloCommand,
@@ -63,6 +159,7 @@ $commands = [
     new DeleteContactCommand,
     new ChangePasswordCommand,
     new PollMessageCommand,
+    new SelfUpdateCommand,
 ];
 
 $app->addCommands($commands);
