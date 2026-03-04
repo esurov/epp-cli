@@ -132,9 +132,8 @@ assert_success "Check ${DOMAIN3} is available" domain:check --domain "$DOMAIN3" 
 # Phase 2: Create first contact (registrant)
 # ---------------------------------------------------------------------------
 step "3. Create Contact #1 (registrant)"
-LAST_OUTPUT=""
-assert_success "Create registrant contact" \
-    contact:create \
+echo "  → Create registrant contact"
+CONTACT1=$($EPP contact:create \
     --name "Test Registrant ${TIMESTAMP}" \
     --street "Teststrasse 1" \
     --city "Wien" \
@@ -147,11 +146,20 @@ assert_success "Create registrant contact" \
     --fax "" \
     --disclose-phone 1 \
     --disclose-fax 1 \
-    --disclose-email 1 || {
+    --disclose-email 1 \
+    --output-handle-only \
+    -n 2>&1 | tr -d '[:space:]')
+if [ -n "$CONTACT1" ]; then
+    green "    ✓ PASS"
+    PASS=$((PASS + 1))
+    TESTS+=("PASS: Create registrant contact")
+else
+    red "    ✗ FAIL – no handle returned"
+    FAIL=$((FAIL + 1))
+    TESTS+=("FAIL: Create registrant contact")
     red "Cannot create registrant contact. Aborting."
     exit 1
-}
-CONTACT1=$(extract_handle)
+fi
 bold "  Contact #1 handle: ${CONTACT1}"
 
 # ---------------------------------------------------------------------------
@@ -231,9 +239,8 @@ assert_success "Info on contact ${CONTACT1}" \
 # Phase 9: Create second contact
 # ---------------------------------------------------------------------------
 step "10. Create Contact #2 (new tech contact)"
-LAST_OUTPUT=""
-assert_success "Create tech contact" \
-    contact:create \
+echo "  → Create tech contact"
+CONTACT2=$($EPP contact:create \
     --name "Test TechC ${TIMESTAMP}" \
     --street "Techstrasse 99" \
     --city "Salzburg" \
@@ -246,10 +253,19 @@ assert_success "Create tech contact" \
     --fax "" \
     --disclose-phone 1 \
     --disclose-fax 1 \
-    --disclose-email 1 || {
+    --disclose-email 1 \
+    --output-handle-only \
+    -n 2>&1 | tr -d '[:space:]')
+if [ -n "$CONTACT2" ]; then
+    green "    ✓ PASS"
+    PASS=$((PASS + 1))
+    TESTS+=("PASS: Create tech contact")
+else
+    red "    ✗ FAIL – no handle returned"
+    FAIL=$((FAIL + 1))
+    TESTS+=("FAIL: Create tech contact")
     red "Cannot create second contact. Continuing anyway."
-}
-CONTACT2=$(extract_handle)
+fi
 bold "  Contact #2 handle: ${CONTACT2}"
 
 # ---------------------------------------------------------------------------
