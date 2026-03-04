@@ -99,7 +99,7 @@ assert_failure() {
 }
 
 extract_handle() {
-    echo "$LAST_OUTPUT" | grep -oP '(?<=ATTR: id: ).*' | head -1 | tr -d '[:space:]'
+    echo "$LAST_OUTPUT" | grep -oP '(?<=ATTR: ID: ).*' | head -1 | tr -d '[:space:]'
 }
 
 # ---------------------------------------------------------------------------
@@ -142,16 +142,16 @@ assert_success "Create registrant contact" \
     --country "AT" \
     --email "test-registrant-${TIMESTAMP}@example.at" \
     --type privateperson \
+    --org "" \
     --voice "+43.1234567" \
-    --output-handle-only || {
+    --fax "" \
+    --disclose-phone 1 \
+    --disclose-fax 1 \
+    --disclose-email 1 || {
     red "Cannot create registrant contact. Aborting."
     exit 1
 }
 CONTACT1=$(extract_handle)
-if [ -z "$CONTACT1" ]; then
-    # Fallback: try to grab it from a different output format
-    CONTACT1=$(echo "$LAST_OUTPUT" | grep -oE '[A-Z0-9]+-[A-Z]+' | head -1)
-fi
 bold "  Contact #1 handle: ${CONTACT1}"
 
 # ---------------------------------------------------------------------------
@@ -243,13 +243,13 @@ assert_success "Create tech contact" \
     --type organisation \
     --org "Test Org GmbH" \
     --voice "+43.9876543" \
-    --output-handle-only || {
+    --fax "" \
+    --disclose-phone 1 \
+    --disclose-fax 1 \
+    --disclose-email 1 || {
     red "Cannot create second contact. Continuing anyway."
 }
 CONTACT2=$(extract_handle)
-if [ -z "$CONTACT2" ]; then
-    CONTACT2=$(echo "$LAST_OUTPUT" | grep -oE '[A-Z0-9]+-[A-Z]+' | head -1)
-fi
 bold "  Contact #2 handle: ${CONTACT2}"
 
 # ---------------------------------------------------------------------------
