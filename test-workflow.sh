@@ -14,7 +14,7 @@ set -euo pipefail
 # Configuration
 # ---------------------------------------------------------------------------
 EPP="${1:-php bin/epp}"
-TIMESTAMP=$(date +%s)
+TIMESTAMP=$(date +%s%N | cut -c1-16)
 DOMAIN_PREFIX="epp-test-${TIMESTAMP}"
 DOMAIN1="${DOMAIN_PREFIX}-1.at"
 DOMAIN2="${DOMAIN_PREFIX}-2.at"
