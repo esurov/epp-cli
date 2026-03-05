@@ -24,6 +24,7 @@ AUTHINFO="Test!Auth${TIMESTAMP}"
 PASS=0
 FAIL=0
 TESTS=()
+CONTACT_VR=""
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -229,16 +230,91 @@ assert_success "Update contact ${CONTACT1}" \
     --postalcode "8010" || true
 
 # ---------------------------------------------------------------------------
-# Phase 8: Get info on Contact #1
+# Phase 8b: Verification report – create contact with report
 # ---------------------------------------------------------------------------
-step "9. Get info on Contact #1"
+step "9. Verification report – create contact with report"
+VERIFICATION_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "  → Create contact with verification report"
+CONTACT_VR=$($EPP contact:create \
+    --name "Test Verified" \
+    --street "Verifystrasse 1" \
+    --city "Innsbruck" \
+    --postalcode "6020" \
+    --country "AT" \
+    --email "test-verified-${TIMESTAMP}@example.at" \
+    --type privateperson \
+    --org "" \
+    --voice "+43.5551234" \
+    --fax "" \
+    --disclose-phone 1 \
+    --disclose-fax 1 \
+    --disclose-email 1 \
+    --verification-report-status success \
+    --verification-report-date "$VERIFICATION_DATE" \
+    --verification-report-reference "REF-${TIMESTAMP}" \
+    --verification-report-agent "Test Verification Agent" \
+    --output-handle-only \
+    -n 2>&1 | tr -d '[:space:]')
+if [ -n "$CONTACT_VR" ]; then
+    green "    ✓ PASS"
+    PASS=$((PASS + 1))
+    TESTS+=("PASS: Create contact with verification report")
+else
+    red "    ✗ FAIL – no handle returned"
+    FAIL=$((FAIL + 1))
+    TESTS+=("FAIL: Create contact with verification report")
+fi
+bold "  Verified contact handle: ${CONTACT_VR}"
+
+# ---------------------------------------------------------------------------
+# Phase 8c: Verification report – update contact with report
+# ---------------------------------------------------------------------------
+step "10. Verification report – update contact with report"
+assert_success "Update contact ${CONTACT1} with verification report" \
+    contact:update \
+    --id "$CONTACT1" \
+    --verification-report-status success \
+    --verification-report-date "$VERIFICATION_DATE" \
+    --verification-report-reference "UPD-REF-${TIMESTAMP}" \
+    --verification-report-agent "Update Verification Agent" || true
+
+# ---------------------------------------------------------------------------
+# Phase 8d: Verification report – missing date should fail
+# ---------------------------------------------------------------------------
+step "11. Verification report – missing date should fail"
+assert_failure "Create contact with verification status but no date" \
+    contact:create \
+    --name "Test NoDate" \
+    --street "Failstrasse 1" \
+    --city "Wien" \
+    --postalcode "1010" \
+    --country "AT" \
+    --email "test-nodate-${TIMESTAMP}@example.at" \
+    --type privateperson \
+    --org "" \
+    --voice "" \
+    --fax "" \
+    --disclose-phone 1 \
+    --disclose-fax 1 \
+    --disclose-email 1 \
+    --verification-report-status success || true
+
+assert_failure "Update contact with verification status but no date" \
+    contact:update \
+    --id "$CONTACT1" \
+    --verification-report-status failure || true
+
+# ---------------------------------------------------------------------------
+# Phase 8e: Get info on Contact #1
+# ---------------------------------------------------------------------------
+step "12. Get info on Contact #1"
 assert_success "Info on contact ${CONTACT1}" \
     contact:info --id "$CONTACT1" || true
 
 # ---------------------------------------------------------------------------
 # Phase 9: Create second contact
 # ---------------------------------------------------------------------------
-step "10. Create Contact #2 (new tech contact)"
+step "13. Create Contact #2 (new tech contact)"
 echo "  → Create tech contact"
 CONTACT2=$($EPP contact:create \
     --name "Test TechC" \
@@ -271,7 +347,7 @@ bold "  Contact #2 handle: ${CONTACT2}"
 # ---------------------------------------------------------------------------
 # Phase 10: Change registrant on DOMAIN1
 # ---------------------------------------------------------------------------
-step "11. Change registrant of ${DOMAIN1} to Contact #2"
+step "14. Change registrant of ${DOMAIN1} to Contact #2"
 if [ -n "$CONTACT2" ]; then
     assert_success "Change registrant on ${DOMAIN1}" \
         domain:update --domain "$DOMAIN1" \
@@ -283,7 +359,7 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 11: Change tech-c on DOMAIN2
 # ---------------------------------------------------------------------------
-step "12. Change tech-c on ${DOMAIN2}"
+step "15. Change tech-c on ${DOMAIN2}"
 if [ -n "$CONTACT2" ]; then
     assert_success "Add tech-c ${CONTACT2} to ${DOMAIN2}" \
         domain:update --domain "$DOMAIN2" \
@@ -299,7 +375,7 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 12: Get info on contacts and remaining domains
 # ---------------------------------------------------------------------------
-step "13. Final info queries"
+step "16. Final info queries"
 assert_success "Info on contact ${CONTACT1}" contact:info --id "$CONTACT1" || true
 if [ -n "$CONTACT2" ]; then
     assert_success "Info on contact ${CONTACT2}" contact:info --id "$CONTACT2" || true
@@ -310,7 +386,7 @@ assert_success "Info on ${DOMAIN2}" domain:info --domain "$DOMAIN2" || true
 # ---------------------------------------------------------------------------
 # Phase 13: Cleanup – delete remaining domains
 # ---------------------------------------------------------------------------
-step "14. Cleanup – delete remaining domains"
+step "17. Cleanup – delete remaining domains"
 assert_success "Delete ${DOMAIN1}" \
     domain:delete --domain "$DOMAIN1" --scheduledate now || true
 assert_success "Delete ${DOMAIN2}" \
@@ -319,7 +395,7 @@ assert_success "Delete ${DOMAIN2}" \
 # ---------------------------------------------------------------------------
 # Phase 14: Verify domains are available again
 # ---------------------------------------------------------------------------
-step "15. Verify domains are available again"
+step "18. Verify domains are available again"
 assert_success "Check ${DOMAIN1} is available" domain:check --domain "$DOMAIN1" || true
 assert_success "Check ${DOMAIN2} is available" domain:check --domain "$DOMAIN2" || true
 assert_success "Check ${DOMAIN3} is available" domain:check --domain "$DOMAIN3" || true
@@ -327,10 +403,13 @@ assert_success "Check ${DOMAIN3} is available" domain:check --domain "$DOMAIN3" 
 # ---------------------------------------------------------------------------
 # Phase 15: Cleanup – delete contacts
 # ---------------------------------------------------------------------------
-step "16. Cleanup – delete contacts"
+step "19. Cleanup – delete contacts"
 assert_success "Delete contact ${CONTACT1}" contact:delete --id "$CONTACT1" || true
 if [ -n "$CONTACT2" ]; then
     assert_success "Delete contact ${CONTACT2}" contact:delete --id "$CONTACT2" || true
+fi
+if [ -n "$CONTACT_VR" ]; then
+    assert_success "Delete verified contact ${CONTACT_VR}" contact:delete --id "$CONTACT_VR" || true
 fi
 
 # ---------------------------------------------------------------------------
