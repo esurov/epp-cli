@@ -104,6 +104,32 @@ class InfoContactCommand extends EppCommand
                 $this->line("ATTR: type: $type");
             }
 
+            if ($verificationStatus = $response->getValidationStatus()) {
+                $this->line("ATTR: verification-status: $verificationStatus");
+            }
+            if ($verificationActionDate = $response->getValidationActionDate()) {
+                $this->line("ATTR: verification-action-date: $verificationActionDate");
+            }
+            if ($verificationReport = $response->getValidationReport()) {
+                $this->line('ATTR: verification-report-result: ' . $verificationReport->getResult());
+                $this->line('ATTR: verification-report-date: ' . $verificationReport->getVerificationDate());
+                if ($method = $verificationReport->getMethod()) {
+                    $this->line("ATTR: verification-report-method: $method");
+                }
+                if ($reference = $verificationReport->getReference()) {
+                    $this->line("ATTR: verification-report-reference: $reference");
+                }
+                if ($agent = $verificationReport->getAgent()) {
+                    $this->line("ATTR: verification-report-agent: $agent");
+                }
+                if ($receivedDate = $verificationReport->getReceivedDate()) {
+                    $this->line("ATTR: verification-report-received-date: $receivedDate");
+                }
+                if ($clID = $verificationReport->getclID()) {
+                    $this->line("ATTR: verification-report-clID: $clID");
+                }
+            }
+
             $this->newLine();
             $this->printTransactionIds($response);
         });
