@@ -134,7 +134,7 @@ assert_success "Check ${DOMAIN3} is available" domain:check --domain "$DOMAIN3" 
 step "3. Create Contact #1 (registrant)"
 echo "  → Create registrant contact"
 CONTACT1=$($EPP contact:create \
-    --name "Test Registrant ${TIMESTAMP}" \
+    --name "Test Registrant" \
     --street "Teststrasse 1" \
     --city "Wien" \
     --postalcode "1010" \
@@ -241,7 +241,7 @@ assert_success "Info on contact ${CONTACT1}" \
 step "10. Create Contact #2 (new tech contact)"
 echo "  → Create tech contact"
 CONTACT2=$($EPP contact:create \
-    --name "Test TechC ${TIMESTAMP}" \
+    --name "Test TechC" \
     --street "Techstrasse 99" \
     --city "Salzburg" \
     --postalcode "5020" \
