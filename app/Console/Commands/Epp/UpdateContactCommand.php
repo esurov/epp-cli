@@ -10,6 +10,7 @@ use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppUpdateContactExtension;
 use Metaregistrar\EPP\atEppUpdateContactRequest;
+use Metaregistrar\EPP\atEppVerificationReport;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Metaregistrar\EPP\eppInfoContactRequest;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,6 +36,10 @@ class UpdateContactCommand extends EppCommand
             ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('verification-report-status', null, InputOption::VALUE_REQUIRED, 'Verification report result (success|failure)')
+            ->addOption('verification-report-date', null, InputOption::VALUE_REQUIRED, 'Verification date (ISO 8601, e.g. 2024-01-15T10:30:00Z)')
+            ->addOption('verification-report-reference', null, InputOption::VALUE_REQUIRED, 'Verification report reference identifier')
+            ->addOption('verification-report-agent', null, InputOption::VALUE_REQUIRED, 'Verification agent name')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
             ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
     }
@@ -128,6 +133,31 @@ class UpdateContactCommand extends EppCommand
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);
             $contact->setDisclose(($hideEmail || $hidePhone || $hideFax) ? 0 : 1);
+
+            $verificationStatus = $this->option('verification-report-status');
+            if ($verificationStatus) {
+                if (! in_array($verificationStatus, ['success', 'failure'])) {
+                    $this->error('--verification-report-status must be one of: success, failure');
+
+                    return self::FAILURE;
+                }
+
+                $verificationDate = $this->option('verification-report-date');
+                if (! $verificationDate) {
+                    $this->error('--verification-report-date is required when using --verification-report-status');
+
+                    return self::FAILURE;
+                }
+
+                $verificationReport = new atEppVerificationReport(
+                    $verificationStatus,
+                    $verificationDate,
+                    null,
+                    $this->option('verification-report-reference'),
+                    $this->option('verification-report-agent'),
+                );
+                $contact->setVerificationReport($verificationReport);
+            }
 
             $ext = new atEppUpdateContactExtension($contact);
             $request = new atEppUpdateContactRequest($handle, null, null, $contact, $ext);

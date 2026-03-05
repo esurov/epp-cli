@@ -9,6 +9,7 @@ use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppCreateContactExtension;
 use Metaregistrar\EPP\atEppCreateContactRequest;
+use Metaregistrar\EPP\atEppVerificationReport;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -32,6 +33,10 @@ class CreateContactCommand extends EppCommand
             ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('verification-report-status', null, InputOption::VALUE_REQUIRED, 'Verification report result (success|failure)')
+            ->addOption('verification-report-date', null, InputOption::VALUE_REQUIRED, 'Verification date (ISO 8601, e.g. 2024-01-15T10:30:00Z)')
+            ->addOption('verification-report-reference', null, InputOption::VALUE_REQUIRED, 'Verification report reference identifier')
+            ->addOption('verification-report-agent', null, InputOption::VALUE_REQUIRED, 'Verification agent name')
             ->addOption('cltrid', null, InputOption::VALUE_REQUIRED, 'Client transaction ID (4-64 chars)')
             ->addOption('output-handle-only', null, InputOption::VALUE_NONE, 'Only output the contact handle (for scripting)')
             ->addOption('logdir', null, InputOption::VALUE_REQUIRED, 'Directory for EPP log files');
@@ -76,6 +81,31 @@ class CreateContactCommand extends EppCommand
 
             if ($hideEmail || $hidePhone || $hideFax) {
                 $contact->setDisclose(0);
+            }
+
+            $verificationStatus = $this->option('verification-report-status');
+            if ($verificationStatus) {
+                if (! in_array($verificationStatus, ['success', 'failure'])) {
+                    $this->error('--verification-report-status must be one of: success, failure');
+
+                    return self::FAILURE;
+                }
+
+                $verificationDate = $this->option('verification-report-date');
+                if (! $verificationDate) {
+                    $this->error('--verification-report-date is required when using --verification-report-status');
+
+                    return self::FAILURE;
+                }
+
+                $verificationReport = new atEppVerificationReport(
+                    $verificationStatus,
+                    $verificationDate,
+                    null,
+                    $this->option('verification-report-reference'),
+                    $this->option('verification-report-agent'),
+                );
+                $contact->setVerificationReport($verificationReport);
             }
 
             $ext = new atEppCreateContactExtension($contact);
