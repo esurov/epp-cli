@@ -203,6 +203,72 @@ php bin/epp domain:transfer-request --domain=example.at --authinfo=secret
 php bin/epp domain:transfer-cancel --domain=example.at
 ```
 
+## Local Development with Namingo (Docker)
+
+A Docker Compose setup is included to run a local [Namingo](https://github.com/getnamingo/registry) EPP registry for testing.
+
+### Build
+
+```bash
+docker compose build
+```
+
+### Start
+
+```bash
+docker compose up -d
+```
+
+### Start clean (wipe database)
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+The `-v` flag removes the MariaDB data volume, so the database is re-created and re-seeded from scratch on the next start.
+
+### Services
+
+| Service | Port | Description |
+|---|---|---|
+| EPP (TLS) | 700 | EPP server |
+| WHOIS | 43 | WHOIS server |
+| RDAP | 7500 | RDAP server |
+| DAS | 1043 | Domain Availability Service |
+| Control Panel | 8080 | Web UI |
+| MariaDB | 3306 | Database |
+| Redis | 6379 | Cache |
+
+### Seeded data
+
+The development environment is pre-seeded with:
+
+- **TLD:** `.test` with pricing for create, renew, and transfer operations
+- **Registrar:** `testregistrar` with $10,000 account balance
+- **IP whitelist:** `0.0.0.0/0` (all IPs allowed)
+- **Control panel admin:** `admin@test.example`
+
+### Credentials
+
+| Service | Username | Password |
+|---|---|---|
+| EPP | `testregistrar` | `testpassword123` |
+| Control Panel | `admin@test.example` | `admin123` |
+| MariaDB | `namingo` | `namingo_password` |
+| MariaDB (root) | `root` | `namingo_root` |
+
+### .env for local testing
+
+```env
+EPP_HOST=localhost
+EPP_PORT=700
+EPP_USERNAME=testregistrar
+EPP_PASSWORD=testpassword123
+EPP_SSL=true
+EPP_VERIFY_PEER=false
+```
+
 ## Output Format
 
 Commands output structured lines for machine parsing:
