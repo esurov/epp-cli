@@ -21,7 +21,8 @@
         "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
-        "humbug/box": "^4.0"
+        "humbug/box": "^4.0",
+        "laravel/pint": "^1.27"
     },
     "autoload": {
         "psr-4": {
