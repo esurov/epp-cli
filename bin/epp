@@ -3,6 +3,7 @@
 
 use App\Console\Commands\SelfUpdateCommand;
 use App\Console\Commands\Epp\ChangePasswordCommand;
+use App\Console\Commands\Epp\CheckContactCommand;
 use App\Console\Commands\Epp\CheckDomainCommand;
 use App\Console\Commands\Epp\CreateContactCommand;
 use App\Console\Commands\Epp\CreateDomainCommand;
@@ -153,6 +154,7 @@ $commands = [
     new TransferQueryDomainCommand,
     new TransferRequestDomainCommand,
     new TransferCancelDomainCommand,
+    new CheckContactCommand,
     new InfoContactCommand,
     new CreateContactCommand,
     new UpdateContactCommand,
