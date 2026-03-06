@@ -79,6 +79,9 @@ class InfoContactCommand extends EppCommand
                         $this->line("ATTR: street: $street");
                     }
                 }
+                if ($sp = $postal->getProvince()) {
+                    $this->line("ATTR: sp: $sp");
+                }
                 if ($zip = $postal->getZipcode()) {
                     $this->line("ATTR: pc: $zip");
                 }

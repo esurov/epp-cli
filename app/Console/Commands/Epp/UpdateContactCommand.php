@@ -32,11 +32,13 @@ class UpdateContactCommand extends EppCommand
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email address')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Contact type (privateperson|organisation|role)')
             ->addOption('org', null, InputOption::VALUE_REQUIRED, 'Organisation name')
+            ->addOption('sp', null, InputOption::VALUE_REQUIRED, 'State/Province')
             ->addOption('voice', null, InputOption::VALUE_REQUIRED, 'Phone number')
             ->addOption('fax', null, InputOption::VALUE_REQUIRED, 'Fax number')
             ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('pw', null, InputOption::VALUE_REQUIRED, 'Authorization info (password) for the contact')
             ->addOption('verification-report-status', null, InputOption::VALUE_REQUIRED, 'Verification report result (success|failure)')
             ->addOption('verification-report-date', null, InputOption::VALUE_REQUIRED, 'Verification date (ISO 8601, e.g. 2024-01-15T10:30:00Z)')
             ->addOption('verification-report-reference', null, InputOption::VALUE_REQUIRED, 'Verification report reference identifier')
@@ -87,6 +89,9 @@ class UpdateContactCommand extends EppCommand
                 }
             }
 
+            $sp = $this->option('sp')
+                ?? ($interactive ? text('State/Province:', default: $existingPostal->getProvince() ?? '') : $existingPostal->getProvince());
+
             $city = $this->option('city')
                 ?? ($interactive ? text('City:', default: $existingPostal->getCity() ?? '', required: true) : $existingPostal->getCity());
 
@@ -135,6 +140,7 @@ class UpdateContactCommand extends EppCommand
                 $this->trackOption('name', $name, true);
                 $this->trackOption('org', $org, true);
                 $this->trackOption('street', $street, true);
+                $this->trackOption('sp', $sp, true);
                 $this->trackOption('city', $city, true);
                 $this->trackOption('postalcode', $postalcode, true);
                 $this->trackOption('country', $country, true);
@@ -150,9 +156,14 @@ class UpdateContactCommand extends EppCommand
                 $this->printCliEquivalent();
             }
 
-            $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
+            $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, $sp ?: null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);
             $contact->setDisclose(($hideEmail || $hidePhone || $hideFax) ? 0 : 1);
+
+            $pw = $this->option('pw');
+            if ($pw) {
+                $contact->setPassword($pw);
+            }
 
             $verificationStatus = $this->option('verification-report-status');
             if ($verificationStatus) {
@@ -203,7 +214,7 @@ class UpdateContactCommand extends EppCommand
     {
         $contactOptions = [
             'name', 'street', 'city', 'postalcode', 'country', 'email',
-            'type', 'org', 'voice', 'fax', 'disclose-phone', 'disclose-fax', 'disclose-email',
+            'type', 'org', 'sp', 'voice', 'fax', 'disclose-phone', 'disclose-fax', 'disclose-email',
         ];
 
         foreach ($contactOptions as $option) {

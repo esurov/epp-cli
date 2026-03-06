@@ -29,11 +29,13 @@ class CreateContactCommand extends EppCommand
             ->addOption('email', null, InputOption::VALUE_REQUIRED, 'Email address')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Contact type (privateperson|organisation|role)')
             ->addOption('org', null, InputOption::VALUE_REQUIRED, 'Organisation name')
+            ->addOption('sp', null, InputOption::VALUE_REQUIRED, 'State/Province')
             ->addOption('voice', null, InputOption::VALUE_REQUIRED, 'Phone number')
             ->addOption('fax', null, InputOption::VALUE_REQUIRED, 'Fax number')
             ->addOption('disclose-phone', null, InputOption::VALUE_REQUIRED, 'Disclose phone in WHOIS (0|1)')
             ->addOption('disclose-fax', null, InputOption::VALUE_REQUIRED, 'Disclose fax in WHOIS (0|1)')
             ->addOption('disclose-email', null, InputOption::VALUE_REQUIRED, 'Disclose email in WHOIS (0|1)')
+            ->addOption('pw', null, InputOption::VALUE_REQUIRED, 'Authorization info (password) for the contact')
             ->addOption('verification-report-status', null, InputOption::VALUE_REQUIRED, 'Verification report result (success|failure)')
             ->addOption('verification-report-date', null, InputOption::VALUE_REQUIRED, 'Verification date (ISO 8601, e.g. 2024-01-15T10:30:00Z)')
             ->addOption('verification-report-reference', null, InputOption::VALUE_REQUIRED, 'Verification report reference identifier')
@@ -70,6 +72,7 @@ class CreateContactCommand extends EppCommand
         }
 
         $org = $this->askIfMissing('org', fn () => text('Organisation name:'));
+        $sp = $this->askIfMissing('sp', fn () => text('State/Province:'));
         $phone = $this->askIfMissing('voice', fn () => text('Phone number:'));
         $fax = $this->askIfMissing('fax', fn () => text('Fax number:'));
 
@@ -82,9 +85,15 @@ class CreateContactCommand extends EppCommand
 
         $this->printCliEquivalent();
 
-        return $this->executeEppOperation(function ($connection) use ($name, $street, $city, $postalcode, $country, $email, $type, $org, $phone, $fax, $hideEmail, $hidePhone, $hideFax) {
-            $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
+        $pw = $this->option('pw');
+
+        return $this->executeEppOperation(function ($connection) use ($name, $street, $city, $postalcode, $country, $email, $type, $org, $sp, $phone, $fax, $hideEmail, $hidePhone, $hideFax, $pw) {
+            $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, $sp ?: null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);
+
+            if ($pw) {
+                $contact->setPassword($pw);
+            }
 
             if ($hideEmail || $hidePhone || $hideFax) {
                 $contact->setDisclose(0);
