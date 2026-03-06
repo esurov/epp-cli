@@ -21,6 +21,7 @@ class CreateContactCommand extends EppCommand
         $this
             ->setName('contact:create')
             ->setDescription('Create a new contact')
+            ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Contact handle/ID (server-generated if omitted)')
             ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Contact name')
             ->addOption('street', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Street address (can be specified multiple times)')
             ->addOption('city', null, InputOption::VALUE_REQUIRED, 'City')
@@ -87,9 +88,15 @@ class CreateContactCommand extends EppCommand
 
         $pw = $this->option('pw');
 
-        return $this->executeEppOperation(function ($connection) use ($name, $street, $city, $postalcode, $country, $email, $type, $org, $sp, $phone, $fax, $hideEmail, $hidePhone, $hideFax, $pw) {
+        $id = $this->option('id');
+
+        return $this->executeEppOperation(function ($connection) use ($id, $name, $street, $city, $postalcode, $country, $email, $type, $org, $sp, $phone, $fax, $hideEmail, $hidePhone, $hideFax, $pw) {
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, $sp ?: null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);
+
+            if ($id) {
+                $contact->setId($id);
+            }
 
             if ($pw) {
                 $contact->setPassword($pw);
