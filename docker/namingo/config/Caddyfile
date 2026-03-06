@@ -1,0 +1,15 @@
+:80 {
+    root * /opt/registry/cp/public
+    php_fastcgi unix//run/php/php-fpm.sock
+    file_server
+    encode gzip
+
+    handle /whois* {
+        root * /opt/registry/whois/web
+        php_fastcgi unix//run/php/php-fpm.sock
+    }
+
+    log {
+        output file /var/log/namingo/caddy_access.log
+    }
+}

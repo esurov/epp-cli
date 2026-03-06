@@ -1,0 +1,55 @@
+services:
+  mariadb:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: namingo_root
+      MYSQL_USER: namingo
+      MYSQL_PASSWORD: namingo_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/namingo/config/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  namingo:
+    build:
+      context: ./docker/namingo
+      dockerfile: Dockerfile
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "700:700"     # EPP (TLS)
+      - "43:43"       # WHOIS
+      - "7500:7500"   # RDAP
+      - "1043:1043"   # DAS
+      - "8080:80"     # Control Panel
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_DATABASE: registry
+      DB_USERNAME: namingo
+      DB_PASSWORD: namingo_password
+      DB_ROOT_PASSWORD: namingo_root
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+volumes:
+  mariadb_data:
