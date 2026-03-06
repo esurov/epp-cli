@@ -23,7 +23,9 @@ class InfoContactCommand extends EppCommand
 
     protected function handle(): int
     {
-        $id = $this->option('id') ?? text('Enter the contact ID:', required: true);
+        $id = $this->askIfMissing('id', fn () => text('Enter the contact ID:', required: true));
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($id) {
             $request = new eppInfoContactRequest(new atEppContactHandle($id));
@@ -32,10 +34,10 @@ class InfoContactCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Contact info failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Contact info failed: '.$response->getResultMessage());
             }
 
             if ($contactId = $response->getContactId()) {
@@ -91,14 +93,14 @@ class InfoContactCommand extends EppCommand
             if ($phone = $contact->getVoice()) {
                 $this->line("ATTR: voice: $phone");
             }
-            $this->line('ATTR: email: ' . ($contact->getEmail() ?: 'n/a'));
+            $this->line('ATTR: email: '.($contact->getEmail() ?: 'n/a'));
             if ($fax = $contact->getFax()) {
                 $this->line("ATTR: fax: $fax");
             }
 
-            $this->line('ATTR: disclose: phone ' . (1 - $response->getWhoisHidePhone()));
-            $this->line('ATTR: disclose: fax ' . (1 - $response->getWhoisHideFax()));
-            $this->line('ATTR: disclose: email ' . (1 - $response->getWhoisHideEmail()));
+            $this->line('ATTR: disclose: phone '.(1 - $response->getWhoisHidePhone()));
+            $this->line('ATTR: disclose: fax '.(1 - $response->getWhoisHideFax()));
+            $this->line('ATTR: disclose: email '.(1 - $response->getWhoisHideEmail()));
 
             if ($type = $response->getPersonType()) {
                 $this->line("ATTR: type: $type");
@@ -111,8 +113,8 @@ class InfoContactCommand extends EppCommand
                 $this->line("ATTR: verification-action-date: $verificationActionDate");
             }
             if ($verificationReport = $response->getValidationReport()) {
-                $this->line('ATTR: verification-report-result: ' . $verificationReport->getResult());
-                $this->line('ATTR: verification-report-date: ' . $verificationReport->getVerificationDate());
+                $this->line('ATTR: verification-report-result: '.$verificationReport->getResult());
+                $this->line('ATTR: verification-report-date: '.$verificationReport->getVerificationDate());
                 if ($method = $verificationReport->getMethod()) {
                     $this->line("ATTR: verification-report-method: $method");
                 }

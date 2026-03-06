@@ -15,7 +15,7 @@ return [
     ],
 
     'dns_soa' => 'hostmaster.test.example',
-    'dns_serial' => date('Ymd') . '01',
+    'dns_serial' => date('Ymd').'01',
 
     'escrow_deposit_path' => '/opt/registry/escrow',
     'escrow_deleteXML' => false,

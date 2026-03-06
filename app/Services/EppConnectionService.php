@@ -43,7 +43,7 @@ class EppConnectionService
         $this->connection = new atEppConnection($logging);
 
         $hostnamePrefix = $this->ssl ? 'ssl://' : 'tcp://';
-        $this->connection->setHostname($hostnamePrefix . $this->hostname);
+        $this->connection->setHostname($hostnamePrefix.$this->hostname);
         $this->connection->setPort($this->port);
         $this->connection->setTimeout($this->timeout);
 
@@ -53,7 +53,7 @@ class EppConnectionService
 
         if ($logging) {
             $this->connection->setLogFile(
-                rtrim($effectiveLogDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . date('Y-m-d') . '.log'
+                rtrim($effectiveLogDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.date('Y-m-d').'.log'
             );
         }
 

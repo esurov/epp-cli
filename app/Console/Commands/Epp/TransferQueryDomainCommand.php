@@ -23,7 +23,9 @@ class TransferQueryDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($domain) {
             $request = new atEppTransferRequest(atEppTransferRequest::OPERATION_QUERY, new atEppDomain($domain));
@@ -32,7 +34,7 @@ class TransferQueryDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
 
                 if ($name = $response->getDomainName()) {
                     $this->line("ATTR: name: $name");
@@ -44,17 +46,17 @@ class TransferQueryDomainCommand extends EppCommand
                     $this->line("ATTR: reID: $reID");
                 }
                 if ($reDate = $response->getTransferRequestDate()) {
-                    $this->line('ATTR: reDate: ' . $this->formatDate($reDate));
+                    $this->line('ATTR: reDate: '.$this->formatDate($reDate));
                 }
                 if ($acID = $response->getTransferActionClientId()) {
                     $this->line("ATTR: acID: $acID");
                 }
                 if ($acDate = $response->getTransferActionDate()) {
-                    $this->line('ATTR: acDate: ' . $this->formatDate($acDate));
+                    $this->line('ATTR: acDate: '.$this->formatDate($acDate));
                 }
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain transfer query failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain transfer query failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());

@@ -3,9 +3,6 @@
 namespace App\Console\Commands\Epp;
 
 use App\EppCommand;
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContact;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppUpdateContactExtension;
@@ -14,6 +11,10 @@ use Metaregistrar\EPP\atEppVerificationReport;
 use Metaregistrar\EPP\eppContactPostalInfo;
 use Metaregistrar\EPP\eppInfoContactRequest;
 use Symfony\Component\Console\Input\InputOption;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 class UpdateContactCommand extends EppCommand
 {
@@ -46,7 +47,7 @@ class UpdateContactCommand extends EppCommand
 
     protected function handle(): int
     {
-        $id = $this->option('id') ?? text('Enter the contact ID to update:', required: true);
+        $id = $this->askIfMissing('id', fn () => text('Enter the contact ID to update:', required: true));
 
         $type = $this->option('type');
         if ($type && ! in_array($type, ['privateperson', 'organisation', 'role'])) {
@@ -115,20 +116,39 @@ class UpdateContactCommand extends EppCommand
             $hideEmail = $this->option('disclose-email') !== null
                 ? ($this->option('disclose-email') == 0)
                 : ($interactive
-                    ? !confirm('Hide email in WHOIS?', default: (bool) $infoResponse->getWhoisHideEmail())
+                    ? ! confirm('Hide email in WHOIS?', default: (bool) $infoResponse->getWhoisHideEmail())
                     : $infoResponse->getWhoisHideEmail());
 
             $hidePhone = $this->option('disclose-phone') !== null
                 ? ($this->option('disclose-phone') == 0)
                 : ($interactive
-                    ? !confirm('Hide phone in WHOIS?', default: (bool) $infoResponse->getWhoisHidePhone())
+                    ? ! confirm('Hide phone in WHOIS?', default: (bool) $infoResponse->getWhoisHidePhone())
                     : $infoResponse->getWhoisHidePhone());
 
             $hideFax = $this->option('disclose-fax') !== null
                 ? ($this->option('disclose-fax') == 0)
                 : ($interactive
-                    ? !confirm('Hide fax in WHOIS?', default: (bool) $infoResponse->getWhoisHideFax())
+                    ? ! confirm('Hide fax in WHOIS?', default: (bool) $infoResponse->getWhoisHideFax())
                     : $infoResponse->getWhoisHideFax());
+
+            if ($interactive) {
+                $this->trackOption('name', $name, true);
+                $this->trackOption('org', $org, true);
+                $this->trackOption('street', $street, true);
+                $this->trackOption('city', $city, true);
+                $this->trackOption('postalcode', $postalcode, true);
+                $this->trackOption('country', $country, true);
+                $this->trackOption('type', $type, true);
+                $this->trackOption('email', $email, true);
+                $this->trackOption('voice', $phone, true);
+                $this->trackOption('fax', $fax, true);
+                $this->trackOption('disclose-email', $hideEmail ? '0' : '1', true);
+                $this->trackOption('disclose-phone', $hidePhone ? '0' : '1', true);
+                $this->trackOption('disclose-fax', $hideFax ? '0' : '1', true);
+                $this->printCliEquivalent();
+            } else {
+                $this->printCliEquivalent();
+            }
 
             $postalInfo = new eppContactPostalInfo($name, $city, $country, $org, $street, null, $postalcode);
             $contact = new atEppContact($postalInfo, $type, $email, $phone, $fax, $hideEmail, $hidePhone, $hideFax);

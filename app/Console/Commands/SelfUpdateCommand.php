@@ -21,7 +21,7 @@ class SelfUpdateCommand extends Command
     {
         $currentVersion = $this->getApplication()->getVersion();
 
-        if ($currentVersion === 'dev' || $currentVersion === '@' . 'git_tag@') {
+        if ($currentVersion === 'dev' || $currentVersion === '@'.'git_tag@') {
             $output->writeln('<error>Cannot self-update a development version. Please install a release build.</error>');
 
             return Command::FAILURE;
@@ -65,8 +65,8 @@ class SelfUpdateCommand extends Command
             return Command::FAILURE;
         }
 
-        $tempFile = $currentBinary . '.tmp';
-        $backupFile = $currentBinary . '.bak';
+        $tempFile = $currentBinary.'.tmp';
+        $backupFile = $currentBinary.'.bak';
 
         if (! $this->downloadFile($downloadUrl, $tempFile)) {
             $output->writeln('<error>Failed to download the update.</error>');
@@ -78,7 +78,7 @@ class SelfUpdateCommand extends Command
         chmod($tempFile, fileperms($currentBinary));
 
         // Verify the downloaded binary works
-        $versionCheck = shell_exec(escapeshellarg($tempFile) . ' --version 2>&1');
+        $versionCheck = shell_exec(escapeshellarg($tempFile).' --version 2>&1');
         if ($versionCheck === null || ! str_contains($versionCheck, $latestVersion)) {
             $output->writeln('<error>Downloaded binary verification failed. Aborting update.</error>');
             @unlink($tempFile);
@@ -150,7 +150,7 @@ class SelfUpdateCommand extends Command
     }
 
     /**
-     * @param array<string, mixed> $release
+     * @param  array<string, mixed>  $release
      */
     private function findAssetUrl(array $release, string $assetName): ?string
     {

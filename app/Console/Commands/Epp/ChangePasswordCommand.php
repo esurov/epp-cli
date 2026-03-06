@@ -21,7 +21,9 @@ class ChangePasswordCommand extends EppCommand
 
     protected function handle(): int
     {
-        $newPassword = $this->option('newpassword') ?? password('Enter the new password (8-16 chars):', required: true);
+        $newPassword = $this->askIfMissing('newpassword', fn () => password('Enter the new password (8-16 chars):', required: true));
+
+        $this->printCliEquivalent();
 
         if (! $this->isValidToken($newPassword, 8, 16)) {
             $this->error('--newpassword must be between 8 and 16 characters');

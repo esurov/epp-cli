@@ -23,7 +23,9 @@ class DeleteContactCommand extends EppCommand
 
     protected function handle(): int
     {
-        $id = $this->option('id') ?? text('Enter the contact ID to delete:', required: true);
+        $id = $this->askIfMissing('id', fn () => text('Enter the contact ID to delete:', required: true));
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($id) {
             $request = new atEppDeleteRequest(new atEppContactHandle($id));
@@ -32,10 +34,10 @@ class DeleteContactCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Contact delete failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Contact delete failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());

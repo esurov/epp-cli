@@ -23,10 +23,15 @@ class PollMessageCommand extends EppCommand
     protected function handle(): int
     {
         $deleteAfterPoll = $this->option('delete-after-poll');
+        $interactiveDelete = false;
 
         if (! $deleteAfterPoll && ! $this->input->getOption('no-interaction')) {
             $deleteAfterPoll = confirm('Delete messages after polling?', false);
+            $interactiveDelete = true;
         }
+        $this->trackOption('delete-after-poll', $deleteAfterPoll, $interactiveDelete);
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($deleteAfterPoll) {
             $request = new atEppPollRequest(atEppPollRequest::POLL_REQ);

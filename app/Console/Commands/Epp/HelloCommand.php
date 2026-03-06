@@ -28,18 +28,18 @@ class HelloCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Hello failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Hello failed: '.$response->getResultMessage());
             }
 
-            $this->line('Server Name: ' . $response->getServerName());
-            $this->line('Server Date: ' . $response->getServerDate());
-            $this->line('Languages: ' . implode(', ', $response->getLanguages()));
-            $this->line('Services: ' . implode(', ', $response->getServices()));
-            $this->line('Extensions: ' . implode(', ', $response->getExtensions()));
-            $this->line('Versions: ' . implode(', ', $response->getVersions()));
+            $this->line('Server Name: '.$response->getServerName());
+            $this->line('Server Date: '.$response->getServerDate());
+            $this->line('Languages: '.implode(', ', $response->getLanguages()));
+            $this->line('Services: '.implode(', ', $response->getServices()));
+            $this->line('Extensions: '.implode(', ', $response->getExtensions()));
+            $this->line('Versions: '.implode(', ', $response->getVersions()));
 
             $lang = $this->option('lang');
             $ver = $this->option('ver');
@@ -49,7 +49,7 @@ class HelloCommand extends EppCommand
                     $response->validateServices($lang, $ver);
                     $this->line("Verification: [OK] Language '{$lang}' and Version '{$ver}' are supported by the server!");
                 } catch (\Metaregistrar\EPP\eppException $e) {
-                    $this->line('Verification: [Failed] ' . $e->getMessage());
+                    $this->line('Verification: [Failed] '.$e->getMessage());
                 }
             }
         });

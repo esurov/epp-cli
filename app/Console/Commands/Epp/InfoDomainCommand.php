@@ -24,7 +24,9 @@ class InfoDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($domain) {
             $request = new eppInfoDomainRequest(new eppDomain($domain));
@@ -33,10 +35,10 @@ class InfoDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain info failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain info failed: '.$response->getResultMessage());
             }
 
             if ($name = $response->getDomainName()) {
@@ -80,17 +82,17 @@ class InfoDomainCommand extends EppCommand
             }
 
             $this->newLine();
-            $this->line('ATTR: registrant: ' . $response->getDomainRegistrant());
+            $this->line('ATTR: registrant: '.$response->getDomainRegistrant());
             foreach ($response->getDomainContacts() as $contact) {
                 if ($contact->getContactType() == 'tech') {
-                    $this->line('ATTR: tech: ' . $contact->getContactHandle());
+                    $this->line('ATTR: tech: '.$contact->getContactHandle());
                 }
             }
 
             if ($ns = $response->getDomainNameservers()) {
                 $this->newLine();
                 foreach ($ns as $host) {
-                    $this->line('ATTR: hostName: ' . $host->getHostname());
+                    $this->line('ATTR: hostName: '.$host->getHostname());
                     foreach (($host->getIpAddresses() ?? []) as $ip => $proto) {
                         $this->line("ATTR: hostAddr: {$ip}");
                     }
@@ -101,10 +103,10 @@ class InfoDomainCommand extends EppCommand
             if ($secdns = $response->getKeydata()) {
                 $this->line('  --- DNSSEC ---');
                 foreach ($secdns as $n) {
-                    $this->line('ATTR: keyTag: ' . $n->getKeytag());
-                    $this->line('ATTR: digestType: ' . $n->getDigestType());
-                    $this->line('ATTR: alg: ' . $n->getAlgorithm());
-                    $this->line('ATTR: digest: ' . $n->getDigest());
+                    $this->line('ATTR: keyTag: '.$n->getKeytag());
+                    $this->line('ATTR: digestType: '.$n->getDigestType());
+                    $this->line('ATTR: alg: '.$n->getAlgorithm());
+                    $this->line('ATTR: digest: '.$n->getDigest());
                     $this->newLine();
                 }
             }

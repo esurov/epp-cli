@@ -23,7 +23,9 @@ class TransferCancelDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($domain) {
             $request = new atEppTransferRequest(atEppTransferRequest::OPERATION_CANCEL, new atEppDomain($domain));
@@ -32,10 +34,10 @@ class TransferCancelDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain transfer cancellation failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain transfer cancellation failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());

@@ -3,8 +3,6 @@
 namespace App\Console\Commands\Epp;
 
 use App\EppCommand;
-use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\text;
 use Metaregistrar\EPP\atEppContactHandle;
 use Metaregistrar\EPP\atEppDomain;
 use Metaregistrar\EPP\atEppUndeleteRequest;
@@ -13,6 +11,9 @@ use Metaregistrar\EPP\eppHost;
 use Metaregistrar\EPP\eppInfoDomainRequest;
 use Metaregistrar\EPP\eppStatus;
 use Symfony\Component\Console\Input\InputOption;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\text;
 
 class UpdateDomainCommand extends EppCommand
 {
@@ -40,7 +41,7 @@ class UpdateDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
 
         if ($this->option('delsecdns-all') && ! empty($this->option('delsecdns'))) {
             $this->error('Either --delsecdns-all or --delsecdns allowed, not both');
@@ -159,9 +160,11 @@ class UpdateDomainCommand extends EppCommand
         }
 
         // DNSSEC
+        $removedSecdns = false;
         if ($secdnsList = $infoResponse->getKeydata()) {
             $this->line('Current DNSSEC records: '.count($secdnsList));
             if (confirm('Remove all DNSSEC data?', default: false)) {
+                $removedSecdns = true;
                 if (! $rem) {
                     $rem = new atEppDomain($domain);
                 }
@@ -180,6 +183,21 @@ class UpdateDomainCommand extends EppCommand
 
             return;
         }
+
+        if ($newRegistrant !== $currentRegistrant) {
+            $this->trackOption('registrant', $newRegistrant, true);
+        }
+        $this->trackOption('addns', array_values($nsToAdd), true);
+        $this->trackOption('delns', array_values($nsToRemove), true);
+        $this->trackOption('addtechc', array_values($tcToAdd), true);
+        $this->trackOption('deltechc', array_values($tcToRemove), true);
+        if ($auth) {
+            $this->trackOption('authinfo', $auth, true);
+        }
+        if ($removedSecdns) {
+            $this->trackOption('delsecdns-all', true, true);
+        }
+        $this->printCliEquivalent();
 
         $request = new atEppUpdateDomainRequest($domain, $add, $rem, $chg, true);
         $this->applyCltrid($request, $this->option('cltrid'));
@@ -219,6 +237,8 @@ class UpdateDomainCommand extends EppCommand
         if (! $hasChanges) {
             return;
         }
+
+        $this->printCliEquivalent();
 
         $chg = new atEppDomain($domain);
         $add = $rem = null;

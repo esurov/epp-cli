@@ -25,12 +25,17 @@ class WithdrawDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
 
         $deleteZone = $this->option('deletezone');
+        $interactiveDeleteZone = false;
         if (! $deleteZone && ! $this->input->getOption('no-interaction')) {
             $deleteZone = confirm('Also delete the zone?', false);
+            $interactiveDeleteZone = true;
         }
+        $this->trackOption('deletezone', $deleteZone, $interactiveDeleteZone);
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($domain, $deleteZone) {
             $request = new atEppWithdrawRequest(new atEppDomain($domain), $deleteZone);
@@ -39,10 +44,10 @@ class WithdrawDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain delete failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain delete failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());

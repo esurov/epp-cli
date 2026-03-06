@@ -26,13 +26,15 @@ class DeleteDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name to delete:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name to delete:', required: true));
 
-        $scheduledate = $this->option('scheduledate') ?? select(
+        $scheduledate = $this->askIfMissing('scheduledate', fn () => select(
             'When should the domain be deleted?',
             ['now' => 'Now', 'expiration' => 'At expiration'],
             'now',
-        );
+        ));
+
+        $this->printCliEquivalent();
 
         if (! in_array($scheduledate, ['now', 'expiration'])) {
             $this->error('--scheduledate must be "now" or "expiration"');
@@ -48,10 +50,10 @@ class DeleteDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain delete failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain delete failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());

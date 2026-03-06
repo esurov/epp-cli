@@ -30,9 +30,11 @@ class CreateDomainCommand extends EppCommand
 
     protected function handle(): int
     {
-        $domain = $this->option('domain') ?? text('Enter the domain name:', required: true);
+        $domain = $this->askIfMissing('domain', fn () => text('Enter the domain name:', required: true));
+
         $nameservers = $this->option('nameserver');
-        if (empty($nameservers)) {
+        $interactiveNs = empty($nameservers);
+        if ($interactiveNs) {
             $nameservers = [];
             while (count($nameservers) < 2) {
                 $ns = text(
@@ -46,14 +48,21 @@ class CreateDomainCommand extends EppCommand
                 $nameservers[] = $ns;
             }
         }
-        $registrant = $this->option('registrant') ?? text('Enter registrant contact handle:', required: true);
+        $this->trackOption('nameserver', $nameservers, $interactiveNs);
+
+        $registrant = $this->askIfMissing('registrant', fn () => text('Enter registrant contact handle:', required: true));
+
         $techContacts = $this->option('techc');
-        if (empty($techContacts)) {
-            $tc = text('Enter tech contact handle:', required: true);
-            $techContacts = [$tc];
+        $interactiveTc = empty($techContacts);
+        if ($interactiveTc) {
+            $techContacts = [text('Enter tech contact handle:', required: true)];
         }
-        $authinfo = $this->option('authinfo') ?? password('Enter authorization info:', required: true);
+        $this->trackOption('techc', $techContacts, $interactiveTc);
+
+        $authinfo = $this->askIfMissing('authinfo', fn () => password('Enter authorization info:', required: true));
         $secdnsOptions = $this->option('secdns');
+
+        $this->printCliEquivalent();
 
         return $this->executeEppOperation(function ($connection) use ($domain, $nameservers, $registrant, $techContacts, $authinfo, $secdnsOptions) {
             $eppDomain = new atEppDomain($domain);
@@ -83,10 +92,10 @@ class CreateDomainCommand extends EppCommand
             $response = $connection->request($request);
 
             if ($response->Success()) {
-                $this->line('SUCCESS: ' . $response->getResultCode());
+                $this->line('SUCCESS: '.$response->getResultCode());
             } else {
-                $this->line('FAILED: ' . $response->getResultCode());
-                $this->line('Domain create failed: ' . $response->getResultMessage());
+                $this->line('FAILED: '.$response->getResultCode());
+                $this->line('Domain create failed: '.$response->getResultMessage());
             }
 
             $this->printConditions($response->getExtensionResult());
